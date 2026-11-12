@@ -1,0 +1,449 @@
+[
+  {
+    "fakultet": "Dasturiy injiniring fakulteti",
+    "yonalishlar": [
+      {
+        "kod": "DI",
+        "nomi": "Dasturiy injiniring",
+        "guruhlar": [
+          {
+            "nomi": "DI26-1",
+            "kurs": 1
+          },
+          {
+            "nomi": "DI26-2",
+            "kurs": 1
+          },
+          {
+            "nomi": "DI25-1",
+            "kurs": 2
+          },
+          {
+            "nomi": "DI25-2",
+            "kurs": 2
+          },
+          {
+            "nomi": "DI24-1",
+            "kurs": 3
+          },
+          {
+            "nomi": "DI24-2",
+            "kurs": 3
+          },
+          {
+            "nomi": "DI23-1",
+            "kurs": 4
+          },
+          {
+            "nomi": "DI23-2",
+            "kurs": 4
+          }
+        ],
+        "reja": {
+          "1": [
+            "Dasturlash asoslari",
+            "Diskret matematika",
+            "Fizika",
+            "Ingliz tili",
+            "O'zbekiston tarixi",
+            "Oliy matematika"
+          ],
+          "2": [
+            "Algoritmlar va ma'lumotlar tuzilmalari",
+            "Ehtimollar nazariyasi",
+            "Kompyuter tarmoqlari",
+            "Ma'lumotlar bazasi",
+            "Obyektga yo'naltirilgan dasturlash",
+            "Web dasturlash"
+          ],
+          "3": [
+            "Dasturiy ta'minot muhandisligi",
+            "Falsafa",
+            "Ma'lumotlar tahlili",
+            "Mobil ilovalar",
+            "Operatsion tizimlar",
+            "Web dasturlash"
+          ],
+          "4": [
+            "Dasturiy ta'minot muhandisligi",
+            "ERP tizimlari",
+            "Loyiha boshqaruvi",
+            "Malakaviy amaliyot",
+            "Mashinali o'qitish",
+            "Mobil ilovalar"
+          ]
+        }
+      },
+      {
+        "kod": "SI",
+        "nomi": "Sun'iy intellekt",
+        "guruhlar": [
+          {
+            "nomi": "SI26-1",
+            "kurs": 1
+          },
+          {
+            "nomi": "SI26-2",
+            "kurs": 1
+          },
+          {
+            "nomi": "SI25-1",
+            "kurs": 2
+          },
+          {
+            "nomi": "SI25-2",
+            "kurs": 2
+          },
+          {
+            "nomi": "SI24-1",
+            "kurs": 3
+          },
+          {
+            "nomi": "SI24-2",
+            "kurs": 3
+          },
+          {
+            "nomi": "SI23-1",
+            "kurs": 4
+          },
+          {
+            "nomi": "SI23-2",
+            "kurs": 4
+          }
+        ],
+        "reja": {
+          "1": [
+            "Dasturlash asoslari",
+            "Diskret matematika",
+            "Fizika",
+            "Ingliz tili",
+            "O'zbekiston tarixi",
+            "Oliy matematika"
+          ],
+          "2": [
+            "Algoritmlar va ma'lumotlar tuzilmalari",
+            "Ehtimollar nazariyasi",
+            "Kompyuter tarmoqlari",
+            "Ma'lumotlar bazasi",
+            "Ma'lumotlar tahlili",
+            "Obyektga yo'naltirilgan dasturlash"
+          ],
+          "3": [
+            "Falsafa",
+            "Kompyuter ko'rish",
+            "Ma'lumotlar tahlili",
+            "Mashinali o'qitish",
+            "Operatsion tizimlar",
+            "Sun'iy intellekt asoslari"
+          ],
+          "4": [
+            "Kompyuter ko'rish",
+            "Loyiha boshqaruvi",
+            "Malakaviy amaliyot",
+            "Mashinali o'qitish",
+            "Sun'iy intellekt asoslari",
+            "Web dasturlash"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "fakultet": "Kompyuter injiniringi fakulteti",
+    "yonalishlar": [
+      {
+        "kod": "AX",
+        "nomi": "Axborot xavfsizligi",
+        "guruhlar": [
+          {
+            "nomi": "AX26-1",
+            "kurs": 1
+          },
+          {
+            "nomi": "AX26-2",
+            "kurs": 1
+          },
+          {
+            "nomi": "AX25-1",
+            "kurs": 2
+          },
+          {
+            "nomi": "AX25-2",
+            "kurs": 2
+          },
+          {
+            "nomi": "AX24-1",
+            "kurs": 3
+          },
+          {
+            "nomi": "AX24-2",
+            "kurs": 3
+          },
+          {
+            "nomi": "AX23-1",
+            "kurs": 4
+          },
+          {
+            "nomi": "AX23-2",
+            "kurs": 4
+          }
+        ],
+        "reja": {
+          "1": [
+            "Dasturlash asoslari",
+            "Diskret matematika",
+            "Fizika",
+            "Ingliz tili",
+            "O'zbekiston tarixi",
+            "Oliy matematika"
+          ],
+          "2": [
+            "Algoritmlar va ma'lumotlar tuzilmalari",
+            "Ehtimollar nazariyasi",
+            "Kiberxavfsizlik asoslari",
+            "Kompyuter tarmoqlari",
+            "Ma'lumotlar bazasi",
+            "Obyektga yo'naltirilgan dasturlash"
+          ],
+          "3": [
+            "Falsafa",
+            "Kiberxavfsizlik asoslari",
+            "Kriptografiya",
+            "Operatsion tizimlar",
+            "Tarmoq xavfsizligi",
+            "Web dasturlash"
+          ],
+          "4": [
+            "Kriptografiya",
+            "Loyiha boshqaruvi",
+            "Ma'lumotlar tahlili",
+            "Malakaviy amaliyot",
+            "Mobil ilovalar",
+            "Tarmoq xavfsizligi"
+          ]
+        }
+      },
+      {
+        "kod": "KI",
+        "nomi": "Kompyuter injiniringi",
+        "guruhlar": [
+          {
+            "nomi": "KI26-1",
+            "kurs": 1
+          },
+          {
+            "nomi": "KI26-2",
+            "kurs": 1
+          },
+          {
+            "nomi": "KI25-1",
+            "kurs": 2
+          },
+          {
+            "nomi": "KI25-2",
+            "kurs": 2
+          },
+          {
+            "nomi": "KI24-1",
+            "kurs": 3
+          },
+          {
+            "nomi": "KI24-2",
+            "kurs": 3
+          },
+          {
+            "nomi": "KI23-1",
+            "kurs": 4
+          },
+          {
+            "nomi": "KI23-2",
+            "kurs": 4
+          }
+        ],
+        "reja": {
+          "1": [
+            "Dasturlash asoslari",
+            "Diskret matematika",
+            "Fizika",
+            "Ingliz tili",
+            "O'zbekiston tarixi",
+            "Oliy matematika"
+          ],
+          "2": [
+            "Algoritmlar va ma'lumotlar tuzilmalari",
+            "Ehtimollar nazariyasi",
+            "Kompyuter tarmoqlari",
+            "Ma'lumotlar bazasi",
+            "Obyektga yo'naltirilgan dasturlash",
+            "Raqamli elektronika"
+          ],
+          "3": [
+            "Falsafa",
+            "Kompyuter arxitekturasi",
+            "Ma'lumotlar tahlili",
+            "Mikroprotsessorlar",
+            "Operatsion tizimlar",
+            "Raqamli elektronika"
+          ],
+          "4": [
+            "Kompyuter ko'rish",
+            "Loyiha boshqaruvi",
+            "Ma'lumotlar tahlili",
+            "Malakaviy amaliyot",
+            "Mikroprotsessorlar",
+            "Web dasturlash"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "fakultet": "Raqamli iqtisodiyot fakulteti",
+    "yonalishlar": [
+      {
+        "kod": "AT",
+        "nomi": "Axborot tizimlari",
+        "guruhlar": [
+          {
+            "nomi": "AT26-1",
+            "kurs": 1
+          },
+          {
+            "nomi": "AT26-2",
+            "kurs": 1
+          },
+          {
+            "nomi": "AT25-1",
+            "kurs": 2
+          },
+          {
+            "nomi": "AT25-2",
+            "kurs": 2
+          },
+          {
+            "nomi": "AT24-1",
+            "kurs": 3
+          },
+          {
+            "nomi": "AT24-2",
+            "kurs": 3
+          },
+          {
+            "nomi": "AT23-1",
+            "kurs": 4
+          },
+          {
+            "nomi": "AT23-2",
+            "kurs": 4
+          }
+        ],
+        "reja": {
+          "1": [
+            "Dasturlash asoslari",
+            "Diskret matematika",
+            "Fizika",
+            "Ingliz tili",
+            "O'zbekiston tarixi",
+            "Oliy matematika"
+          ],
+          "2": [
+            "Algoritmlar va ma'lumotlar tuzilmalari",
+            "Biznes tahlil",
+            "Ehtimollar nazariyasi",
+            "Kompyuter tarmoqlari",
+            "Ma'lumotlar bazasi",
+            "Obyektga yo'naltirilgan dasturlash"
+          ],
+          "3": [
+            "Axborot tizimlarini loyihalash",
+            "Biznes tahlil",
+            "ERP tizimlari",
+            "Falsafa",
+            "Operatsion tizimlar",
+            "Web dasturlash"
+          ],
+          "4": [
+            "Axborot tizimlarini loyihalash",
+            "ERP tizimlari",
+            "Loyiha boshqaruvi",
+            "Ma'lumotlar tahlili",
+            "Malakaviy amaliyot",
+            "Mobil ilovalar"
+          ]
+        }
+      },
+      {
+        "kod": "RI",
+        "nomi": "Raqamli iqtisodiyot",
+        "guruhlar": [
+          {
+            "nomi": "RI26-1",
+            "kurs": 1
+          },
+          {
+            "nomi": "RI26-2",
+            "kurs": 1
+          },
+          {
+            "nomi": "RI25-1",
+            "kurs": 2
+          },
+          {
+            "nomi": "RI25-2",
+            "kurs": 2
+          },
+          {
+            "nomi": "RI24-1",
+            "kurs": 3
+          },
+          {
+            "nomi": "RI24-2",
+            "kurs": 3
+          },
+          {
+            "nomi": "RI23-1",
+            "kurs": 4
+          },
+          {
+            "nomi": "RI23-2",
+            "kurs": 4
+          }
+        ],
+        "reja": {
+          "1": [
+            "Dasturlash asoslari",
+            "Diskret matematika",
+            "Fizika",
+            "Ingliz tili",
+            "O'zbekiston tarixi",
+            "Oliy matematika"
+          ],
+          "2": [
+            "Algoritmlar va ma'lumotlar tuzilmalari",
+            "Ehtimollar nazariyasi",
+            "Kompyuter tarmoqlari",
+            "Ma'lumotlar bazasi",
+            "Mikroiqtisodiyot",
+            "Obyektga yo'naltirilgan dasturlash"
+          ],
+          "3": [
+            "Biznes tahlil",
+            "Ekonometrika",
+            "Falsafa",
+            "Mikroiqtisodiyot",
+            "Operatsion tizimlar",
+            "Raqamli marketing"
+          ],
+          "4": [
+            "Biznes tahlil",
+            "ERP tizimlari",
+            "Ekonometrika",
+            "Loyiha boshqaruvi",
+            "Malakaviy amaliyot",
+            "Raqamli marketing"
+          ]
+        }
+      }
+    ]
+  }
+]

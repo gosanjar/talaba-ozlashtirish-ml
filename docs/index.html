@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talaba Monitoring Tizimi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f5f6fa; --surface:#fff; --surface-2:#f0f2f7; --border:#e1e5ee; --text:#1a1f33; --muted:#667089;
+  --accent:#3b5bfd; --accent-soft:#e7ecff;
+  --good:#16956a; --good-soft:#e1f5ec; --warn:#d48400; --warn-soft:#fff2d9; --bad:#d63447; --bad-soft:#fde6e9;
+  --info:#2f7de1; --info-soft:#e3effd; --purple:#8352d6; --purple-soft:#f0e8fd; --gray:#7d8599; --gray-soft:#eef0f4;
+  --shadow:0 1px 2px rgba(20,25,50,.05),0 4px 14px rgba(20,25,50,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1120; --surface:#161a2c; --surface-2:#1d2237; --border:#2a3050; --text:#e6e8f2; --muted:#9aa1bc;
+  --accent:#7c8eff; --accent-soft:#232a52;
+  --good:#3ccf90; --good-soft:#15332a; --warn:#f2b441; --warn-soft:#3a2e12; --bad:#ff6b7b; --bad-soft:#3d1a22;
+  --info:#6aa8ff; --info-soft:#17284a; --purple:#b48cf3; --purple-soft:#2c2045; --gray:#8e96ae; --gray-soft:#252a3e; --shadow:none}}
+:root[data-theme="dark"]{
+  --bg:#0e1120; --surface:#161a2c; --surface-2:#1d2237; --border:#2a3050; --text:#e6e8f2; --muted:#9aa1bc;
+  --accent:#7c8eff; --accent-soft:#232a52;
+  --good:#3ccf90; --good-soft:#15332a; --warn:#f2b441; --warn-soft:#3a2e12; --bad:#ff6b7b; --bad-soft:#3d1a22;
+  --info:#6aa8ff; --info-soft:#17284a; --purple:#b48cf3; --purple-soft:#2c2045; --gray:#8e96ae; --gray-soft:#252a3e; --shadow:none}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+header{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.hwrap{max-width:1360px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:18px;height:58px}
+.logo{font-weight:700;font-size:15.5px;white-space:nowrap}
+.logo span{color:var(--muted);font-weight:400}
+nav{display:flex;gap:2px;overflow-x:auto;flex:1}
+nav a{padding:7px 11px;border-radius:8px;color:var(--muted);text-decoration:none;white-space:nowrap;font-weight:500}
+nav a:hover{background:var(--surface-2);color:var(--text)}
+nav a.active{background:var(--accent-soft);color:var(--accent)}
+.iconbtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit}
+#banner{display:none;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:600;text-align:center;padding:6px 16px}
+main{max-width:1360px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:22px;margin:0 0 4px} h2{font-size:16px;margin:0 0 12px} h3{font-size:14px;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;gap:16px;margin-bottom:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))} .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))} .g6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.span2{grid-column:span 2}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);min-width:0}
+.kpi .l{color:var(--muted);font-size:12.5px} .kpi .v{font-size:25px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25}
+.kpi .s{color:var(--muted);font-size:12px}
+.chart{position:relative;height:260px} .chart.tall{height:340px}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.gchip{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 4px;border-radius:6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:12px;position:sticky;top:0;background:var(--surface);z-index:1}
+th.sort{cursor:pointer;user-select:none} th.sort:hover{color:var(--text)}
+th.num,td.num{text-align:right}
+td.wrap{white-space:normal}
+tbody tr.click{cursor:pointer} tbody tr.click:hover td{background:var(--surface-2)}
+tr.base td{color:var(--muted);font-style:italic} tr.best td{font-weight:700}
+.tablewrap{overflow:auto;max-height:560px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+input,select,textarea{padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:14px;width:100%}
+.filters input{max-width:240px} .filters select{width:auto;max-width:220px}
+input[type=range]{padding:0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:8px 15px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;white-space:nowrap}
+.btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+.btn.danger{background:var(--bad-soft);color:var(--bad)}
+.btn.sm{padding:4px 10px;font-size:12.5px;border-radius:7px}
+.btn:disabled{opacity:.6;cursor:wait}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.big{font-size:36px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden;min-width:50px} .bar i{display:block;height:100%;border-radius:5px}
+.stack{display:flex;height:12px;border-radius:4px;overflow:hidden;min-width:120px;background:var(--surface-2)} .stack i{display:block;height:100%}
+.pb{display:grid;grid-template-columns:110px 1fr 44px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.kv{display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:13.5px} .kv span{color:var(--muted)} .kv b{text-align:right}
+.factor{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 56px;gap:8px;align-items:center;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--border)}
+.dv{display:flex} .dv .h{width:50%;display:flex} .dv .h.l{justify-content:flex-end;border-right:1px solid var(--border)}
+.dv i{display:block;height:10px;border-radius:3px}
+.adv{display:flex;flex-direction:column;gap:8px}
+.adv div{padding:8px 12px;border-radius:8px;font-size:13.5px;border-left:3px solid}
+.sim{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:13.5px}
+.sim:hover{background:var(--surface-2)}
+fieldset{border:1px solid var(--border);border-radius:10px;padding:12px 14px 6px;margin:0 0 14px;min-width:0}
+legend{font-weight:600;font-size:13px;color:var(--muted);padding:0 6px}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:4px 14px}
+label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:10px} label input,label select{margin-top:4px}
+.subjrow{display:grid;grid-template-columns:minmax(0,1fr) 78px 78px 78px 120px;gap:8px;align-items:center;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--border)}
+.subjrow input{padding:6px 8px}
+.err{color:var(--bad);margin-top:10px;font-weight:600}
+.sticky{position:sticky;top:76px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-weight:600;z-index:60;display:none;max-width:90vw}
+.loading{color:var(--muted);padding:40px;text-align:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12.5px;padding:3px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);display:inline-flex;gap:6px;align-items:center}
+.chip button{border:0;background:none;color:var(--bad);cursor:pointer;font-weight:700;padding:0}
+.note{background:var(--surface-2);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--muted)}
+.crumbs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:13.5px;margin-bottom:6px}
+.crumbs a{text-decoration:none}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.seg button{background:var(--surface);border:0;padding:6px 12px;font:inherit;font-size:13px;color:var(--muted);cursor:pointer;border-right:1px solid var(--border)}
+.seg button:last-child{border-right:0} .seg button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.flag{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:6px 10px;font-size:13px;margin-bottom:6px}
+.heat td{text-align:center;font-size:12px;padding:6px 4px;min-width:44px}
+.heat th{font-size:11px;white-space:normal;min-width:44px;position:static}
+.modal{position:fixed;inset:0;background:rgba(10,12,25,.45);display:none;place-items:center;z-index:50;padding:16px}
+.modal .card{width:min(560px,100%);max-height:90vh;overflow:auto}
+.tz{display:grid;grid-template-columns:70px 70px 1fr 70px 30px;gap:6px;align-items:center;margin-bottom:6px}
+.pred-card .v{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px}
+.cdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.wif{display:grid;grid-template-columns:150px 1fr 54px;gap:10px;align-items:center;font-size:13px;margin-bottom:6px}
+.delta-up{color:var(--good);font-weight:700} .delta-dn{color:var(--bad);font-weight:700}
+@media (max-width:1100px){.g6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:1000px){
+  .g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))} .g2{grid-template-columns:1fr} .span2{grid-column:auto}
+  .sticky{position:static} .logo span{display:none}
+}
+@media (max-width:620px){
+  .hwrap{padding:0 16px;gap:10px} main{padding:18px 16px 50px}
+  .g3,.g4,.g6{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .subjrow{grid-template-columns:1fr 1fr 1fr;} .subjrow .fn{grid-column:1/-1}
+  .tablewrap{max-height:none} .pb{grid-template-columns:90px 1fr 40px} .wif{grid-template-columns:110px 1fr 46px}
+}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="logo">🎓 Talaba monitoringi <span>· ML tahlil</span></div>
+  <nav id="nav">
+    <a href="#/">Bosh panel</a><a href="#/tuzilma">Tuzilma</a><a href="#/talabalar">Talabalar</a><a href="#/qoshish">+ Yangi talaba</a>
+    <a href="#/analitika">Analitika</a><a href="#/klasterlar">Klasterlar</a><a href="#/modellar">Modellar va aniqlik</a><a href="#/boshqaruv">Boshqaruv</a>
+  </nav>
+  <button class="iconbtn" id="themeBtn" title="Mavzu">🌓</button>
+</div><div id="banner"></div></header>
+<main id="app"><div class="loading">Yuklanmoqda…</div></main>
+<div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="card" id="modalBody"></div></div>
+
+<script>window.DEMO_MODE=true</script>
+<script>
+/* ======================================================= yordamchilar */
+const $=s=>document.querySelector(s), app=$("#app");
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct=v=>v==null?"—":Math.round(v*100)+"%";
+const f1=v=>v==null?"—":(+v).toFixed(1);
+let charts=[], META=null, STATUS={};
+const DEMO=window.DEMO_MODE===true, REPO_URL="https://github.com/gosanjar/talaba-ozlashtirish-ml";
+async function api(u,o={}){
+  if(DEMO) return demoApi(u,o);
+  if(o.body&&typeof o.body!=="string"){o.body=JSON.stringify(o.body);o.headers={"Content-Type":"application/json"}}
+  const r=await fetch(u,o); const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(typeof j.detail==="string"?j.detail:"Xatolik ("+r.status+")");
+  return j;
+}
+/* ---------- statik demo (GitHub Pages): oldindan hisoblangan JSON fayllar ---------- */
+const DEMO_MSG="Bu statik demo (GitHub Pages): qo'shish, tahrirlash, \"agar…\" simulyatori va qayta o'qitish faqat serverli versiyada ishlaydi. README'dagi yo'riqnoma bo'yicha lokal ishga tushiring.";
+const DCACHE={};
+async function dget(f){if(DCACHE[f])return DCACHE[f]; const r=await fetch("api/"+f); if(!r.ok) throw new Error("Demo'da bu kesim uchun ma'lumot yo'q ("+f+")"); return DCACHE[f]=await r.json();}
+function unitKey(p){if(+p.guruh_id) return "g"+p.guruh_id; if(+p.yonalish_id) return "y"+p.yonalish_id+"_k"+(+p.kurs||0); if(+p.fakultet_id) return "f"+p.fakultet_id+"_k"+(+p.kurs||0); return "all_k"+(+p.kurs||0);}
+async function demoApi(u,o){
+  if(o.method&&o.method!=="GET") throw new Error(DEMO_MSG);
+  const [path,q]=u.split("?"), p=Object.fromEntries(new URLSearchParams(q||""));
+  let m;
+  if(path==="/api/meta") return dget("meta.json");
+  if(path==="/api/status") return dget("status.json");
+  if(path==="/api/tahlil") return dget("tahlil/"+unitKey(p)+".json");
+  if(path==="/api/analitika") return dget("analitika/"+unitKey(p)+".json");
+  if(path==="/api/klasterlar") return dget("klasterlar.json");
+  if(path==="/api/models") return dget("models.json");
+  if(m=path.match(/^\/api\/students\/(\d+)$/)) return dget("talaba/"+m[1]+".json");
+  if(m=path.match(/^\/api\/guruhlar\/(\d+)\/fanlar$/)) return dget("guruhlar/"+m[1]+".json");
+  if(path==="/api/students"){
+    let d=await dget("talabalar.json");
+    if(+p.fakultet_id) d=d.filter(r=>r.fakultet_id==p.fakultet_id); if(+p.yonalish_id) d=d.filter(r=>r.yonalish_id==p.yonalish_id);
+    if(+p.guruh_id) d=d.filter(r=>r.guruh_id==p.guruh_id); if(+p.kurs) d=d.filter(r=>r.kurs==p.kurs);
+    if(p.q){const s=p.q.toLowerCase(); d=d.filter(r=>r.fio.toLowerCase().includes(s)||String(r.id)===p.q)}
+    if(p.toifa) d=d.filter(r=>r.toifa===p.toifa); if(p.klaster) d=d.filter(r=>r.cluster_name===p.klaster);
+    if(p.xavf) d=d.filter(r=>r.xavf===p.xavf); if(p.tolov) d=d.filter(r=>r.tolov===p.tolov);
+    const MX={anomal:r=>r.anomaly,grant_dav:r=>r.tolov==="Kontrakt"&&r.alo_proba>=.5,grant_xavf:r=>r.tolov==="Grant"&&r.pasayish_proba>=.3,chetlash:r=>r.chet_proba>=.5,nb:r=>r.nb>=36,nomalum:r=>r.natija_manba==="bashorat"};
+    if(MX[p.maxsus]) d=d.filter(MX[p.maxsus]);
+    const col={fio:"fio",guruh:"guruh",natija:"natija",ball:"ball",fail:"fail_proba",chet:"chet_proba",nb:"nb",oraliq:"oraliq",alo:"alo_proba"}[p.sort]||"fio", dir=+p.desc?-1:1;
+    d=[...d].sort((a,b)=>{const x=a[col],y=b[col]; if(x==null)return 1; if(y==null)return -1; return (typeof x==="string"?x.localeCompare(y):x-y)*dir});
+    const size=Math.max(10,Math.min(+p.size||50,500)), page=Math.max(1,+p.page||1);
+    return {total:d.length,page,size,items:d.slice((page-1)*size,page*size)};
+  }
+  throw new Error(DEMO_MSG);
+}
+const csvHref=p=>DEMO?REPO_URL+"/tree/main/dataset":"/api/export.csv"+qs(unitParams(p));
+function toast(t){const e=$("#toast"); e.textContent=t; e.style.display="block"; clearTimeout(e._t); e._t=setTimeout(()=>e.style.display="none",3200);}
+function mk(el,cfg){const c=new Chart(document.getElementById(el),cfg); charts.push(c); return c;}
+function clearCharts(){charts.forEach(c=>c.destroy()); charts=[];}
+function axes(extra={}){const g=css("--border"),t=css("--muted"); return {x:{grid:{color:g},ticks:{color:t}},y:{grid:{color:g},ticks:{color:t}},...extra};}
+const qs=o=>{const p=Object.entries(o).filter(([k,v])=>v!==""&&v!=null&&v!==0&&v!=="0"); return p.length?"?"+p.map(([k,v])=>k+"="+encodeURIComponent(v)).join("&"):""};
+function parseHash(){const h=location.hash.slice(1)||"/"; const [p,q]=h.split("?"); const params={}; new URLSearchParams(q||"").forEach((v,k)=>params[k]=v); return [p,params];}
+const L=k=>META.labels[k]||k;
+
+/* ---------- ranglar: toifalar dinamik (baholash tizimiga qarab) ---------- */
+const LADDER={2:["--bad","--good"],3:["--bad","--warn","--good"],4:["--bad","--warn","--info","--good"],5:["--bad","--warn","--purple","--info","--good"],6:["--bad","--warn","--gray","--purple","--info","--good"],7:["--bad","--warn","--gray","--purple","--info","--good","--good"]};
+const ladder=n=>LADDER[Math.min(7,Math.max(2,n))];
+function catVar(name){const c=META.kategoriyalar, i=c.indexOf(name); return i<0?"--gray":ladder(c.length)[i];}
+const catPill=n=>`<span class="pill" style="background:var(${catVar(n)}-soft);color:var(${catVar(n)})">${esc(n)}</span>`;
+function gradeChip(baho,tid){
+  const t=META.tizimlar.find(x=>x.id===tid)||META.tizimlar[0]; const ch=t.chegaralar; const i=ch.findIndex(c=>c.baho===baho);
+  if(i<0) return `<span class="gchip" style="background:var(--surface-2)">${esc(baho??"—")}</span>`;
+  const v=ladder(ch.length)[ch.length-1-i]; return `<span class="gchip" title="${esc(ch[i].nomi)}" style="background:var(${v}-soft);color:var(${v})">${esc(baho)}</span>`;
+}
+const CL_VAR={"A'lochi va faol":"--good","Yaxshi, barqaror":"--info","Qobiliyatli, lekin intizomi past":"--purple","Faol, lekin bahosi past":"--warn","O'rtacha, sust":"--gray","Xavf guruhi":"--bad"};
+const clVar=n=>CL_VAR[String(n).replace(/ \(2\)$/,"")]||"--gray";
+const clPill=n=>`<span class="pill" style="background:var(${clVar(n)}-soft);color:var(${clVar(n)})">${esc(n)}</span>`;
+const CL_DESC={"A'lochi va faol":"Yuqori natija, davomat va faollik yaxshi","Yaxshi, barqaror":"Natija ham, faollik ham o'rtachadan yuqori",
+ "Qobiliyatli, lekin intizomi past":"Baholar yaxshi, lekin faollik/davomat bahodan past","Faol, lekin bahosi past":"Harakat qiladi, topshiriq va LMS faol, ammo natija faollikka yarasha emas",
+ "O'rtacha, sust":"Natija va faollik o'rtachadan past","Xavf guruhi":"Past natija, ko'p NB, past faollik — birinchi navbatda e'tibor"};
+const XAVF={"yuqori":["--bad","Yuqori"],"o'rta":["--warn","O'rta"],"past":["--info","Past"],"yo'q":["--good","Yo'q"]};
+const riskPill=x=>{const [v,t]=XAVF[x]||XAVF["yo'q"]; return `<span class="pill" style="background:var(${v}-soft);color:var(${v})">${t}</span>`};
+function probBar(p,inv){const v=p>=.5?"--bad":p>=.25?"--warn":"--good"; const vv=inv?(p>=.5?"--good":p>=.25?"--info":"--gray"):v;
+  return `<div class="row" style="gap:6px;flex-wrap:nowrap"><div class="bar" style="width:60px"><i style="width:${Math.round(p*100)}%;background:var(${vv})"></i></div><span class="small">${pct(p)}</span></div>`;}
+function toifaStack(t){const cats=META.kategoriyalar, n=cats.reduce((s,c)=>s+(t[c]||0),0)||1;
+  return `<div class="stack" title="${cats.map(c=>c+": "+(t[c]||0)).join(", ")}">${cats.map(c=>`<i style="width:${(t[c]||0)/n*100}%;background:var(${catVar(c)})"></i>`).join("")}</div>`;}
+const natija=r=>`${f1(r.natija)}${r.natija_manba==="bashorat"?' <span class="muted small" title="Yakuniy hali ma\'lum emas: model bashorati">≈</span>':""}`;
+
+/* ---------- tuzilma yordamchilari ---------- */
+const FAK=id=>META.tuzilma.find(f=>f.id==id);
+function YON(id){for(const f of META.tuzilma)for(const y of f.yonalishlar)if(y.id==id)return Object.assign({fak:f},y);}
+function GUR(id){for(const f of META.tuzilma)for(const y of f.yonalishlar)for(const g of y.guruhlar)if(g.id==id)return Object.assign({yon:y,fak:f},g);}
+function unitSelects(p,ids){
+  const fak=META.tuzilma, yons=p.fakultet_id?(FAK(p.fakultet_id)?.yonalishlar||[]):fak.flatMap(f=>f.yonalishlar);
+  let grs=p.yonalish_id?(YON(p.yonalish_id)?.guruhlar||[]):p.fakultet_id?yons.flatMap(y=>y.guruhlar):[];
+  if(p.kurs) grs=grs.filter(g=>g.kurs==p.kurs);
+  return `<select id="${ids}f"><option value="">Barcha fakultetlar</option>${fak.map(f=>`<option value="${f.id}" ${f.id==p.fakultet_id?"selected":""}>${esc(f.nomi)}</option>`).join("")}</select>
+  <select id="${ids}y"><option value="">Barcha yo'nalishlar</option>${yons.map(y=>`<option value="${y.id}" ${y.id==p.yonalish_id?"selected":""}>${esc(y.kod)} — ${esc(y.nomi)}</option>`).join("")}</select>
+  <select id="${ids}k"><option value="">Barcha bosqichlar</option>${[1,2,3,4,5,6].map(k=>`<option value="${k}" ${k==p.kurs?"selected":""}>${k}-kurs</option>`).join("")}</select>
+  <select id="${ids}g" ${grs.length?"":"disabled"}><option value="">Barcha guruhlar</option>${grs.map(g=>`<option value="${g.id}" ${g.id==p.guruh_id?"selected":""}>${esc(g.nomi)}</option>`).join("")}</select>`;
+}
+function bindUnitSelects(ids,p,go){
+  $("#"+ids+"f").onchange=e=>go({...p,fakultet_id:e.target.value,yonalish_id:"",guruh_id:"",page:1});
+  $("#"+ids+"y").onchange=e=>{const y=YON(e.target.value); go({...p,yonalish_id:e.target.value,fakultet_id:y?y.fak.id:p.fakultet_id,guruh_id:"",page:1})};
+  $("#"+ids+"k").onchange=e=>go({...p,kurs:e.target.value,guruh_id:"",page:1});
+  $("#"+ids+"g").onchange=e=>go({...p,guruh_id:e.target.value,page:1});
+}
+const unitParams=p=>({fakultet_id:p.fakultet_id||"",yonalish_id:p.yonalish_id||"",guruh_id:p.guruh_id||"",kurs:p.kurs||""});
+
+function studentRows(items,cols=["fio","guruh","tolov","natija","ball","toifa","fail","chet","cluster","xavf"]){
+  const C={fio:r=>`<td><b>${esc(r.fio)}</b>${r.anomaly?' <span title="G\'ayrioddiy ko\'rsatkichlar">⚠️</span>':""}</td>`,guruh:r=>`<td>${esc(r.guruh)} <span class="muted small">${r.kurs}-k</span></td>`,
+    tolov:r=>`<td>${esc(r.tolov)}</td>`,natija:r=>`<td class="num">${natija(r)}</td>`,ball:r=>`<td class="num">${f1(r.ball)}</td>`,
+    toifa:r=>`<td>${catPill(r.toifa)}</td>`,fail:r=>`<td>${probBar(r.fail_proba)}</td>`,chet:r=>`<td>${probBar(r.chet_proba)}</td>`,
+    alo:r=>`<td>${probBar(r.alo_proba,1)}</td>`,pas:r=>`<td>${probBar(r.pasayish_proba)}</td>`,nb:r=>`<td class="num">${r.nb}</td>`,
+    cluster:r=>`<td>${clPill(r.cluster_name)}</td>`,xavf:r=>`<td>${riskPill(r.xavf)}</td>`,qarz:r=>`<td class="num">${f1(r.qarz_kutilgan)}</td>`};
+  return items.map(r=>`<tr class="click" onclick="location.hash='#/talaba/${r.id}'">${cols.map(c=>C[c](r)).join("")}</tr>`).join("");
+}
+const HEAD={fio:"F.I.O.",guruh:"Guruh",tolov:"To'lov",natija:"Natija",ball:"Bashorat",toifa:"Toifa (model)",fail:"Qarz ehtimoli",chet:"Chetlash xavfi",
+  alo:"A'lo ehtimoli",pas:"71 dan tushish",nb:"NB",cluster:"Klaster",xavf:"Xavf",qarz:"Kutilgan qarz"};
+const thead=cols=>`<thead><tr>${cols.map(c=>`<th class="${["natija","ball","nb","qarz"].includes(c)?"num":""}">${HEAD[c]}</th>`).join("")}</tr></thead>`;
+
+function scatterChart(el,points){
+  const names=META.klaster_map, ds=Object.entries(names).map(([k,n])=>({label:n,data:points.filter(p=>p.c==k).map(p=>({x:p.x,y:p.y,id:p.id,fio:p.fio,b:p.b})),
+    backgroundColor:css(clVar(n))+"bb",pointRadius:3.2,pointHoverRadius:6}));
+  mk(el,{type:"scatter",data:{datasets:ds},options:{maintainAspectRatio:false,scales:axes(),
+    plugins:{legend:{position:"bottom",labels:{boxWidth:10,color:css("--muted")}},tooltip:{callbacks:{label:c=>`${c.raw.fio}: ${c.raw.b}`}}},
+    onClick:(e,a)=>{if(a.length){const p=a[0]; location.hash="#/talaba/"+ds[p.datasetIndex].data[p.index].id}}}});
+}
+
+/* ======================================================= holat (fon o'qitish) */
+let wasBusy=false;
+async function pollStatus(){
+  try{STATUS=await api("/api/status")}catch(e){setTimeout(pollStatus,5000);return}
+  const b=$("#banner");
+  if(STATUS.busy){b.style.display="block"; b.textContent="⏳ "+(STATUS.message||"Model o'qitilmoqda…")+(STATUS.elapsed?` (${Math.round(STATUS.elapsed)} s)`:"")+" — natijalar tayyor bo'lgach yangilanadi"; wasBusy=true}
+  else{b.style.display=STATUS.error?"block":"none"; if(STATUS.error) b.textContent="Xatolik: "+STATUS.error;
+    if(wasBusy){wasBusy=false; toast("Model yangilandi ✓"); await loadMeta(); route()}}
+  setTimeout(pollStatus,STATUS.busy?2000:6000);
+}
+async function loadMeta(){META=await api("/api/meta")}
+
+/* ======================================================= router */
+const ROUTES=[[/^\/$/,()=>pageTahlil({},true)],[/^\/tuzilma$/,p=>pageTahlil(p,false)],[/^\/talabalar$/,pageList],[/^\/talaba\/(\d+)$/,(p,m)=>pageProfile(+m[1])],
+  [/^\/qoshish$/,()=>pageForm(null)],[/^\/tahrir\/(\d+)$/,(p,m)=>pageForm(+m[1])],[/^\/analitika$/,pageAnalitika],[/^\/klasterlar$/,pageKlaster],
+  [/^\/modellar$/,pageModels],[/^\/boshqaruv$/,pageAdmin]];
+async function route(){
+  const [path,params]=parseHash(); clearCharts();
+  document.querySelectorAll("nav a").forEach(a=>{const h=a.getAttribute("href").slice(1); a.classList.toggle("active",h==="/"?path==="/":path.startsWith(h)||(h==="/talabalar"&&path.startsWith("/talaba/")))});
+  for(const [re,fn] of ROUTES){const m=path.match(re); if(m){
+    app.innerHTML='<div class="loading">Yuklanmoqda…</div>';
+    try{await fn(params,m)}catch(e){app.innerHTML=`<div class="card"><h2>Ma'lumot yuklanmadi</h2><p class="muted">${esc(e.message)}</p><button class="btn ghost" onclick="route()">Qayta urinish</button></div>`}
+    window.scrollTo(0,0); return}}
+  location.hash="#/";
+}
+
+/* ======================================================= 1. Bosh panel / Tuzilma */
+async function pageTahlil(p,home){
+  const d=await api("/api/tahlil"+qs(unitParams(p))); const s=d.stats; const cats=d.kategoriyalar;
+  const go=np=>location.hash="#/tuzilma"+qs(unitParams(np));
+  let crumbs=`<a href="#/tuzilma">Universitet</a>`;
+  if(p.fakultet_id){const f=FAK(p.fakultet_id); crumbs+=` › <a href="#/tuzilma${qs({fakultet_id:f?.id})}">${esc(f?.nomi)}</a>`}
+  if(p.yonalish_id){const y=YON(p.yonalish_id); crumbs+=` › <a href="#/tuzilma${qs({fakultet_id:y?.fak.id,yonalish_id:y?.id})}">${esc(y?.kod)} ${esc(y?.nomi)}</a>`}
+  if(p.guruh_id){const g=GUR(p.guruh_id); crumbs+=` › <b>${esc(g?.nomi)}</b> <span class="muted">(${g?.kurs}-kurs)</span>`}
+  if(p.kurs) crumbs+=` <span class="pill" style="background:var(--accent-soft);color:var(--accent)">${p.kurs}-kurs</span>`;
+  const LV={fakultet:"Fakultetlar",yonalish:"Yo'nalishlar",guruh:"Guruhlar"};
+  app.innerHTML=`
+  <div class="between"><div>${home?`<h1>Bosh panel</h1><p class="sub">${s.n} ta talaba · ${META.tuzilma.length} fakultet · bashoratlar ${esc(STATUS.trained_at||"")} da o'qitilgan model asosida. Natija ustunida yakuniy ma'lum bo'lsa haqiqiy ball, aks holda bashorat (≈) ko'rsatiladi.</p>`
+    :`<h1>Tuzilma bo'yicha tahlil</h1><div class="crumbs">${crumbs}</div>`}</div>
+    <div class="row"><a class="btn ghost" href="${csvHref(p)}">⬇ CSV</a>${!home?`<a class="btn ghost" href="#/talabalar${qs(unitParams(p))}">Talabalar ro'yxati →</a>`:""}</div></div>
+  ${!home?`<div class="filters">${unitSelects(p,"u")}</div>`:""}
+  <div class="grid g6">
+    ${kpi("Talabalar",s.n,`haqiqiy natija: ${s.haqiqiy_ulush}%`)}${kpi("O'rtacha natija",f1(s.ortacha),`oraliq o'rtacha: ${f1(s.oraliq)}`)}
+    ${kpi("Qarz ehtimoli ≥50%",s.otmaydi+"%","kamida 1 fandan qarz",s.otmaydi>25?"--bad":"")}${kpi("Chetlashtirish xavfi",s.chetlash+"%","3+ fandan qarz",s.chetlash>12?"--bad":"")}
+    ${kpi("A'loga da'vogar",s.alo_dav,"ehtimol ≥ 50%","--good")}${kpi("Grant / qarzdor",s.grant+"% / "+s.qarzdor+"%",`anomal: ${s.anomal}`)}
+  </div>
+  ${d.level!=="talaba"?`<div class="card" style="margin-bottom:16px"><div class="between"><h2>${LV[d.level]} kesimida</h2><span class="muted small">qatorni bosing — ichkariga kiring</span></div>
+    <div class="tablewrap"><table><thead><tr><th>${LV[d.level].slice(0,-3)}</th>${d.level==="guruh"?"<th>Kurs</th>":""}<th class="num">Talaba</th><th class="num">O'rtacha</th><th class="num">Oraliq</th><th class="num">NB</th><th class="num">Qarz %</th><th class="num">Chetlash %</th><th class="num">Grant %</th><th>Toifalar taqsimoti</th></tr></thead>
+    <tbody>${d.children.map(c=>`<tr class="click" data-id="${c.id}"><td><b>${esc(c.kod?c.kod+" — ":"")}${esc(c.nomi)}</b></td>${d.level==="guruh"?`<td>${c.kurs}</td>`:""}<td class="num">${c.n}</td><td class="num"><b>${f1(c.ortacha)}</b></td><td class="num">${f1(c.oraliq)}</td><td class="num">${f1(c.nb)}</td>
+    <td class="num" style="color:${c.otmaydi>30?"var(--bad)":"inherit"}">${f1(c.otmaydi)}</td><td class="num">${f1(c.chetlash)}</td><td class="num">${f1(c.grant)}</td><td>${toifaStack(c.toifa)}</td></tr>`).join("")}</tbody></table></div></div>`:""}
+  <div class="grid g3">
+    <div class="card"><h2>Toifalar (${esc(META.tizimlar.find(t=>t.id===META.faol_tizim)?.nomi)})</h2><div class="chart"><canvas id="c1"></canvas></div></div>
+    <div class="card"><h2>Natijalar taqsimoti (ball)</h2><div class="chart"><canvas id="c2"></canvas></div></div>
+    <div class="card"><h2>Bosqichlar bo'yicha</h2><div class="chart"><canvas id="c3"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h2>Klasterlar xaritasi (PCA)</h2><p class="muted small" style="margin-top:-8px">Har nuqta — talaba. Bosing — profil ochiladi.</p><div class="chart tall"><canvas id="c4"></canvas></div></div>
+    <div class="card"><h2>Fanlar bo'yicha natija</h2><p class="muted small" style="margin-top:-8px">Eng qiyin fanlar yuqorida. Qarz % — haqiqiy, bashorat — fan modeli.</p>
+      <div class="tablewrap" style="max-height:340px"><table><thead><tr><th>Fan</th><th class="num">n</th><th class="num">Oraliq</th><th class="num">Natija</th><th class="num">Qarz %</th><th class="num">Bashorat %</th><th>Baholar</th></tr></thead>
+      <tbody>${d.fanlar.map(f=>`<tr><td class="wrap">${esc(f.fan)}</td><td class="num">${f.n}</td><td class="num">${f1(f.oraliq)}</td><td class="num"><b>${f1(f.natija)}</b></td><td class="num">${f1(f.qarz_foiz)}</td><td class="num">${f1(f.qarz_bashorat)}</td><td>${toifaStack(f.dist)}</td></tr>`).join("")}</tbody></table></div></div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h2>Grant va kontrakt</h2><div class="chart"><canvas id="c5"></canvas></div></div>
+    <div class="card"><h2>Sababsiz NB taqsimoti</h2><div class="chart"><canvas id="c6"></canvas></div></div>
+    <div class="card"><h2>Klasterlar ulushi</h2><div class="chart"><canvas id="c7"></canvas></div></div>
+  </div>
+  ${d.students.length?`<div class="card" style="margin-bottom:16px"><h2>Guruh talabalari (${d.students.length})</h2><div class="tablewrap"><table>${thead(["fio","tolov","natija","ball","toifa","fail","chet","cluster","xavf"])}<tbody>${studentRows(d.students,["fio","tolov","natija","ball","toifa","fail","chet","cluster","xavf"])}</tbody></table></div></div>`:""}
+  <div class="grid g2">
+    <div class="card"><div class="between"><h2>🚨 Eng yuqori xavf</h2><a href="#/talabalar${qs({...unitParams(p),sort:"chet",desc:1})}" class="small">hammasi →</a></div><div class="tablewrap"><table>${thead(["fio","guruh","natija","fail","chet"])}<tbody>${studentRows(d.risk,["fio","guruh","natija","fail","chet"])}</tbody></table></div></div>
+    <div class="card"><div class="between"><h2>🏆 Eng yaxshi natijalar</h2><a href="#/talabalar${qs({...unitParams(p),sort:"natija",desc:1})}" class="small">hammasi →</a></div><div class="tablewrap"><table>${thead(["fio","guruh","tolov","natija","alo"])}<tbody>${studentRows(d.top,["fio","guruh","tolov","natija","alo"])}</tbody></table></div></div>
+  </div>`;
+  if(!home) bindUnitSelects("u",p,go);
+  document.querySelectorAll("tr[data-id]").forEach(tr=>tr.onclick=()=>{const id=tr.dataset.id;
+    go(d.level==="fakultet"?{fakultet_id:id}:d.level==="yonalish"?{...p,yonalish_id:id,fakultet_id:YON(id)?.fak.id}:{...p,guruh_id:id})});
+  mk("c1",{type:"doughnut",data:{labels:cats,datasets:[{data:cats.map(c=>s.toifa[c]||0),backgroundColor:cats.map(c=>css(catVar(c))),borderColor:css("--surface")}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:css("--muted"),boxWidth:10}}}}});
+  const pm=META.tizimlar.find(t=>t.id===META.faol_tizim);
+  mk("c2",{type:"bar",data:{labels:d.ball_hist.labels,datasets:[{data:d.ball_hist.values,backgroundColor:d.ball_hist.labels.map(l=>css(catVar(META.kategoriyalar[catIdx(+l,pm)]))),borderRadius:3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes()}});
+  mk("c3",{type:"bar",data:{labels:d.by_kurs.map(k=>k.kurs+"-kurs"),datasets:[{type:"line",label:"O'rtacha ball",data:d.by_kurs.map(k=>k.ortacha),borderColor:css("--accent"),yAxisID:"y1",tension:.3},
+    {label:"Qarz %",data:d.by_kurs.map(k=>k.otmaydi),backgroundColor:css("--bad")+"99",borderRadius:4},{label:"Chetlash %",data:d.by_kurs.map(k=>k.chetlash),backgroundColor:css("--warn")+"99",borderRadius:4}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:css("--muted"),boxWidth:10}}},scales:{...axes(),y1:{position:"right",grid:{display:false},ticks:{color:css("--muted")}}}}});
+  scatterChart("c4",d.scatter);
+  mk("c5",{type:"bar",data:{labels:cats,datasets:d.tolov.map((t,i)=>({label:`${t.tolov} (o'rtacha ${t.ortacha})`,data:cats.map(c=>t.n?(t.toifa[c]||0)/t.n*100:0),backgroundColor:css(i?"--purple":"--good")+"bb",borderRadius:4}))},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:css("--muted"),boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+": "+c.raw.toFixed(1)+"%"}}},scales:axes()}});
+  mk("c6",{type:"bar",data:{labels:d.nb_hist.labels,datasets:[{data:d.nb_hist.values,backgroundColor:d.nb_hist.labels.map((l,i)=>css(i>=5?"--bad":i>=3?"--warn":"--info")),borderRadius:4}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes()}});
+  const kl=Object.entries(s.klaster);
+  mk("c7",{type:"doughnut",data:{labels:kl.map(k=>k[0]),datasets:[{data:kl.map(k=>k[1]),backgroundColor:kl.map(k=>css(clVar(k[0]))),borderColor:css("--surface")}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:css("--muted"),boxWidth:10}}}}});
+}
+function catIdx(b,t){const ch=[...t.chegaralar].reverse(); let i=0; ch.forEach((c,j)=>{if(b>=c.min)i=j}); return i;}
+const kpi=(l,v,s,col)=>`<div class="card kpi"><div class="l">${l}</div><div class="v" style="${col?`color:var(${col})`:""}">${v}</div><div class="s">${s||""}</div></div>`;
+
+/* ======================================================= 2. Talabalar ro'yxati */
+async function pageList(p){
+  p={sort:"fio",desc:0,page:1,size:50,...p};
+  const d=await api("/api/students"+qs(p)); const go=np=>location.hash="#/talabalar"+qs(np);
+  const sel=(id,label,opts,val)=>`<select id="${id}"><option value="">${label}</option>${opts.map(o=>{const [v,t]=Array.isArray(o)?o:[o,o]; return `<option value="${esc(v)}" ${v==val?"selected":""}>${esc(t)}</option>`}).join("")}</select>`;
+  const pages=Math.max(1,Math.ceil(d.total/d.size));
+  const SORTS={fio:"fio",guruh:"guruh",natija:"natija",ball:"ball",fail:"fail",chet:"chet",nb:"nb",alo:"alo"};
+  const cols=["fio","guruh","tolov","natija","ball","toifa","fail","chet","alo","nb","cluster","xavf"];
+  app.innerHTML=`<div class="between"><div><h1>Talabalar</h1><p class="sub">${d.total} ta talaba topildi. Ustun nomini bosib saralang.</p></div>
+    <div class="row"><a class="btn ghost" href="${csvHref(p)}">⬇ CSV</a><a class="btn" href="#/qoshish">+ Yangi talaba</a></div></div>
+  <div class="filters">${unitSelects(p,"l")}</div>
+  <div class="filters"><input id="q" placeholder="Ism yoki ID bo'yicha qidirish…" value="${esc(p.q||"")}">
+    ${sel("ft","Barcha toifalar",META.kategoriyalar,p.toifa)}${sel("fc","Barcha klasterlar",META.klasterlar,p.klaster)}
+    ${sel("fx","Xavf: barchasi",[["yuqori","Xavf: yuqori"],["o'rta","Xavf: o'rta"],["past","Xavf: past"],["yo'q","Xavf: yo'q"]],p.xavf)}
+    ${sel("fp","To'lov: barchasi",["Grant","Kontrakt"],p.tolov)}
+    ${sel("fm","Maxsus ro'yxat…",[["chetlash","Chetlashtirish xavfi"],["grant_dav","Grantga da'vogar (kontrakt)"],["grant_xavf","Grantni yo'qotish xavfi"],["nb","NB limitiga yetganlar (36+)"],["anomal","G'ayrioddiy (anomaliya)"],["nomalum","Yakuniysi hali noma'lum"]],p.maxsus)}</div>
+  <div class="card"><div class="tablewrap"><table><thead><tr>${cols.map(c=>{const s=SORTS[c]; return `<th class="${s?"sort":""} ${["natija","ball","nb"].includes(c)?"num":""}" ${s?`data-s="${s}"`:""}>${HEAD[c]}${p.sort===s?(+p.desc?" ↓":" ↑"):""}</th>`}).join("")}</tr></thead>
+  <tbody>${studentRows(d.items,cols)}</tbody></table></div>
+  <div class="pager"><span class="muted small">${(d.page-1)*d.size+1}–${Math.min(d.total,d.page*d.size)} / ${d.total}</span>
+   <button class="btn ghost sm" id="pv" ${d.page<=1?"disabled":""}>‹</button><span class="small">${d.page} / ${pages}</span><button class="btn ghost sm" id="nx" ${d.page>=pages?"disabled":""}>›</button></div></div>`;
+  bindUnitSelects("l",p,go);
+  let t; $("#q").oninput=e=>{clearTimeout(t); t=setTimeout(()=>go({...p,q:e.target.value,page:1}),400)};
+  [["ft","toifa"],["fc","klaster"],["fx","xavf"],["fp","tolov"],["fm","maxsus"]].forEach(([id,k])=>$("#"+id).onchange=e=>go({...p,[k]:e.target.value,page:1}));
+  document.querySelectorAll("th[data-s]").forEach(th=>th.onclick=()=>{const s=th.dataset.s; go({...p,sort:s,desc:p.sort===s?(+p.desc?0:1):(["natija","ball","fail","chet","nb","alo"].includes(s)?1:0),page:1})});
+  $("#pv").onclick=()=>go({...p,page:+p.page-1}); $("#nx").onclick=()=>go({...p,page:+p.page+1});
+  if(p.q){const q=$("#q"); q.focus(); q.setSelectionRange(q.value.length,q.value.length)}
+}
+
+/* ======================================================= 3. Talaba profili */
+function predCards(pr,haq){
+  const cats=META.kategoriyalar;
+  return `<div class="grid g4">
+  <div class="card pred-card"><div class="muted small">Regressiya: kutilayotgan yakuniy ball</div><div class="v">${f1(pr.ball)}</div>
+    <div class="row small">${catPill(pr.toifa)} <span class="muted">baho: ${esc(pr.baho)}</span></div>
+    ${haq&&haq.yakuniy!=null?`<div class="note" style="margin-top:8px">Haqiqiy natija: <b>${haq.yakuniy}</b> (${esc(haq.baho)}), qarzlar: ${haq.qarz_soni}${pr.oof?" · bashorat kross-validatsiyada, bu talabani ko'rmagan modeldan":""}</div>`:`<div class="note" style="margin-top:8px">Yakuniy hali ma'lum emas: bu — bashorat</div>`}</div>
+  <div class="card"><div class="muted small">Klassifikatsiya: toifa ehtimollari</div>${[...cats].reverse().map(c=>`<div class="pb"><span>${esc(c)}</span><div class="bar"><i style="width:${(pr.toifa_proba[c]||0)*100}%;background:var(${catVar(c)})"></i></div><b class="small">${pct(pr.toifa_proba[c]||0)}</b></div>`).join("")}</div>
+  <div class="card"><div class="muted small">Klassifikatsiya: o'tadi / o'tmaydi</div><div class="v" style="font-size:24px;color:var(${pr.otadi?"--good":"--bad"})">${pr.otadi?"O'tadi":"O'tmaydi"}</div>
+    <div class="pb"><span>Qarz ehtimoli</span><div class="bar"><i style="width:${pr.fail_proba*100}%;background:var(--bad)"></i></div><b class="small">${pct(pr.fail_proba)}</b></div>
+    <div class="pb"><span>Chetlashtirish</span><div class="bar"><i style="width:${pr.chet_proba*100}%;background:var(--bad)"></i></div><b class="small">${pct(pr.chet_proba)}</b></div>
+    <div class="small muted">Kutilayotgan qarzlar soni: <b>${f1(pr.qarz_kutilgan)}</b></div></div>
+  <div class="card"><div class="muted small">Grant / stipendiya</div>
+    <div class="pb"><span>A'lo (≥${META.grant_chegara})</span><div class="bar"><i style="width:${pr.alo_proba*100}%;background:var(--good)"></i></div><b class="small">${pct(pr.alo_proba)}</b></div>
+    <div class="pb"><span>${META.grant_saqlash} dan tushish</span><div class="bar"><i style="width:${pr.pasayish_proba*100}%;background:var(--warn)"></i></div><b class="small">${pct(pr.pasayish_proba)}</b></div>
+    <div class="muted small" style="margin-top:8px">Klasterlash</div><div>${clPill(pr.cluster_name)}</div><div class="small muted">${esc(CL_DESC[pr.cluster_name]||"")}</div></div>
+  </div>`;
+}
+function shapBlock(ex,base){
+  const mx=Math.max(...ex.map(e=>Math.abs(e.impact)),1);
+  return `<h2>Bashorat sabablari (SHAP)</h2><p class="muted small" style="margin-top:-8px">O'rtacha talaba (${f1(base)} ball) bilan solishtirganda har bir omil ballni qancha o'zgartirgani.</p>
+  ${ex.map(e=>`<div class="factor"><span>${esc(e.label)} <span class="muted">= ${esc(e.value)}</span></span>
+   <div class="dv"><div class="h l">${e.impact<0?`<i style="width:${Math.abs(e.impact)/mx*100}%;background:var(--bad)"></i>`:""}</div><div class="h">${e.impact>0?`<i style="width:${e.impact/mx*100}%;background:var(--good)"></i>`:""}</div></div>
+   <b class="small" style="text-align:right;color:var(${e.impact>0?"--good":"--bad"})">${e.impact>0?"+":""}${e.impact.toFixed(1)}</b></div>`).join("")}`;
+}
+const ADV_VAR={danger:"--bad",warn:"--warn",info:"--info",good:"--good"};
+const advBlock=a=>`<div class="adv">${a.map(x=>`<div style="background:var(${ADV_VAR[x.tur]}-soft);border-color:var(${ADV_VAR[x.tur]})">${esc(x.matn)}</div>`).join("")}</div>`;
+const simBlock=s=>s.map(x=>`<div class="sim" onclick="location.hash='#/talaba/${x.id}'"><span>${esc(x.fio)} <span class="muted small">${esc(x.guruh)}</span></span><span>${natija(x)} ${clPill(x.cluster_name)}</span></div>`).join("")||'<p class="muted">—</p>';
+
+async function pageProfile(sid){
+  const d=await api("/api/students/"+sid); const t=d.talaba, pr=d.prediction, tz=d.tuzilma, rk=d.reyting;
+  app.innerHTML=`<div class="between"><div><div class="crumbs"><a href="#/tuzilma${qs({fakultet_id:tz.fakultet_id})}">${esc(tz.fakultet)}</a> › <a href="#/tuzilma${qs({fakultet_id:tz.fakultet_id,yonalish_id:tz.yonalish_id})}">${esc(tz.yonalish_kod)} ${esc(tz.yonalish)}</a> › <a href="#/tuzilma${qs({fakultet_id:tz.fakultet_id,yonalish_id:tz.yonalish_id,guruh_id:tz.guruh_id})}">${esc(tz.guruh)}</a> · ${tz.kurs}-kurs</div>
+    <h1>${esc(t.fio)} <span class="muted small">#${t.id}</span></h1>
+    <div class="row small"><span class="pill" style="background:var(${t.tolov==="Grant"?"--good":"--purple"}-soft);color:var(${t.tolov==="Grant"?"--good":"--purple"})">${esc(t.tolov)}</span>${t.kontrakt_qarz==="Ha"?'<span class="pill" style="background:var(--bad-soft);color:var(--bad)">Kontrakt qarzi</span>':""}${t.stipendiya==="Ha"?'<span class="pill" style="background:var(--info-soft);color:var(--info)">Stipendiya</span>':""}${pr.anomaly?'<span class="pill" style="background:var(--warn-soft);color:var(--warn)">⚠ Anomaliya</span>':""}
+    <span class="muted">Guruhda ${rk.guruhda}/${rk.guruh_n}-o'rin · kursda ${rk.kursda}/${rk.kurs_n}</span></div></div>
+    <div class="row"><a class="btn ghost" href="#/tahrir/${sid}">✏️ Tahrirlash</a><button class="btn danger" id="del">O'chirish</button></div></div>
+  <div style="height:14px"></div>
+  ${pr.flags.length?pr.flags.map(f=>`<div class="flag">⚠ ${esc(f)}</div>`).join(""):""}
+  ${predCards(pr,d.haqiqiy)}
+  <div class="card" style="margin-bottom:16px"><h2>Fanlar: baholar va har bir fan bo'yicha bashorat</h2>
+   <div class="tablewrap"><table><thead><tr><th>Fan</th><th class="num">Joriy</th><th class="num">Oraliq</th><th class="num">Yakuniy (haqiqiy)</th><th class="num">Bashorat</th><th>Kutilgan baho</th><th>Qarz ehtimoli</th><th class="num">O'tish chegarasi</th></tr></thead>
+   <tbody>${d.baholar.map(g=>{const b=g.bashorat||{}; return `<tr><td class="wrap"><b>${esc(g.fan)}</b></td><td class="num">${f1(g.joriy)} ${gradeChip(g.joriy_baho,g.tizim_id)}</td><td class="num">${f1(g.oraliq)} ${gradeChip(g.oraliq_baho,g.tizim_id)}</td>
+    <td class="num">${g.yakuniy!=null?f1(g.yakuniy)+" "+gradeChip(g.yakuniy_baho,g.tizim_id):'<span class="muted">—</span>'}</td><td class="num"><b>${f1(b.pred)}</b></td><td>${b.baho?gradeChip(b.baho,g.tizim_id)+" <span class='small muted'>"+esc(b.baho_nomi)+"</span>":""}</td><td>${b.fail_p!=null?probBar(b.fail_p):""}</td><td class="num">${g.pass_min}</td></tr>`}).join("")}</tbody></table></div></div>
+  <div class="grid g2">
+   <div class="card">${shapBlock(d.explain,d.base_value)}</div>
+   <div class="card"><h2>Tavsiyalar</h2>${advBlock(d.advice)}
+     <h2 style="margin-top:18px">Taqqoslash</h2><div class="kv"><span>Talaba natijasi</span><b>${f1(d.haqiqiy.yakuniy??pr.ball)}</b><span>Guruh o'rtachasi</span><b>${f1(rk.guruh_ortacha)}</b><span>Kurs (yo'nalish) o'rtachasi</span><b>${f1(rk.kurs_ortacha)}</b><span>Universitet o'rtachasi</span><b>${f1(rk.umumiy_ortacha)}</b>
+     <span>Oraliq o'rtacha</span><b>${f1(d.agregat.oraliq_ortacha)}</b><span>Joriy o'rtacha</span><b>${f1(d.agregat.joriy_ortacha)}</b><span>O'zgarish (oldingi semestrga nisbatan)</span><b>${d.agregat.trend>0?"+":""}${f1(d.agregat.trend)}</b></div></div>
+  </div>
+  <div class="grid g2">
+   <div class="card"><h2>🧪 "Agar…" simulyatori</h2><p class="muted small" style="margin-top:-8px">Ko'rsatkichlarni o'zgartiring — model natijani qanday bashorat qilishini ko'ring (bazaga saqlanmaydi).</p><div id="wif"></div><div id="wifRes" style="margin-top:10px"></div></div>
+   <div class="card"><h2>Shaxsiy ma'lumotlar</h2><div class="kv">${[...META.text_cols.slice(1),...META.num_cols].map(k=>`<span>${esc(L(k))}</span><b>${esc(t[k])}</b>`).join("")}</div>
+     <h2 style="margin-top:18px">O'xshash talabalar (KNN)</h2>${simBlock(d.similar)}</div>
+  </div>`;
+  $("#del").onclick=async()=>{if(!confirm(`${t.fio} bazadan o'chirilsinmi? Bu amalni qaytarib bo'lmaydi.`))return; await api("/api/students/"+sid,{method:"DELETE"}); toast("O'chirildi"); location.hash="#/talabalar"};
+  whatIf(t,d.baholar,pr);
+}
+function whatIf(t,baholar,pr){
+  if(DEMO){$("#wif").innerHTML=`<div class="note">${esc(DEMO_MSG)}</div>`; return}
+  const S=[["nb_sababsiz",0,90,1],["topshiriq",0,100,1],["lms_kirish",0,100,1],["mustaqil_soat",0,30,.5],["ish_soati",0,50,1],["oraliq_shift",-20,20,1]];
+  const st={...t,oraliq_shift:0};
+  $("#wif").innerHTML=S.map(([k,a,b,s])=>`<div class="wif"><span>${k==="oraliq_shift"?"Barcha fanlardan oraliq ±":esc(L(k))}</span><input type="range" min="${a}" max="${b}" step="${s}" value="${st[k]}" data-k="${k}"><b id="v_${k}">${st[k]}</b></div>`).join("")+
+    `<div class="row" style="margin-top:6px"><label class="small" style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="wq" style="width:auto" ${t.kontrakt_qarz==="Ha"?"checked":""}> Kontrakt qarzi bor</label><label class="small" style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="wi" style="width:auto" ${t.ishlaydi==="Ha"?"checked":""}> Ishlaydi</label><button class="btn ghost sm" id="wr">Asl holatga qaytarish</button></div>`;
+  let tm;
+  const run=async()=>{
+    const body={...t,kontrakt_qarz:$("#wq").checked?"Ha":"Yo'q",ishlaydi:$("#wi").checked?"Ha":"Yo'q",baholar:baholar.map(g=>({fan_id:g.fan_id,joriy:g.joriy,oraliq:Math.max(0,Math.min(100,g.oraliq+st.oraliq_shift)),yakuniy:null}))};
+    S.forEach(([k])=>{if(k!=="oraliq_shift")body[k]=+st[k]}); delete body.id; delete body.created_at;
+    try{const r=await api("/api/preview",{method:"POST",body}); const p=r.prediction, dl=p.ball-pr.ball;
+      const D=(a,b,inv)=>{const x=a-b; if(Math.abs(x)<0.005)return '<span class="muted">0</span>'; const up=inv?x<0:x>0; return `<span class="${up?"delta-up":"delta-dn"}">${x>0?"+":""}${(x*100).toFixed(0)} p.p.</span>`};
+      $("#wifRes").innerHTML=`<div class="grid g3" style="margin:0"><div class="note">Ball: <b>${f1(p.ball)}</b> <span class="${dl>=0?"delta-up":"delta-dn"}">${dl>=0?"+":""}${dl.toFixed(1)}</span><br>${catPill(p.toifa)}</div>
+       <div class="note">Qarz: <b>${pct(p.fail_proba)}</b> ${D(p.fail_proba,pr.fail_proba,1)}<br>Chetlash: <b>${pct(p.chet_proba)}</b> ${D(p.chet_proba,pr.chet_proba,1)}</div>
+       <div class="note">A'lo: <b>${pct(p.alo_proba)}</b> ${D(p.alo_proba,pr.alo_proba)}<br>${clPill(p.cluster_name)}</div></div>`}catch(e){$("#wifRes").innerHTML=`<div class="err">${esc(e.message)}</div>`}
+  };
+  document.querySelectorAll("#wif input[type=range]").forEach(i=>i.oninput=()=>{st[i.dataset.k]=+i.value; $("#v_"+i.dataset.k).textContent=i.value; clearTimeout(tm); tm=setTimeout(run,250)});
+  $("#wq").onchange=$("#wi").onchange=run;
+  $("#wr").onclick=()=>whatIf(t,baholar,pr);
+  $("#wifRes").innerHTML='<p class="muted small">Slayderni suring…</p>';
+}
+
+/* ======================================================= 4. Qo'shish / tahrirlash */
+async function pageForm(sid){
+  if(DEMO){app.innerHTML=`<h1>${sid?"Talabani tahrirlash":"Yangi talaba qo'shish"}</h1><div class="card"><p>${esc(DEMO_MSG)}</p><p><a class="btn" href="${REPO_URL}#readme">Yo'riqnoma (GitHub)</a></p></div>`; return}
+  let t=null, grades=[];
+  if(sid){const d=await api("/api/students/"+sid); t=d.talaba; grades=d.baholar}
+  const g0=t?GUR(t.guruh_id):null;
+  const sel=(k,v)=>`<label>${esc(L(k)||k)}<select name="${k}">${META.options[k].map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></label>`;
+  const num=(k,v)=>{const [a,b]=META.ranges[k]; return `<label>${esc(L(k))}<input type="number" name="${k}" min="${a}" max="${b}" step="any" value="${v??""}" required></label>`};
+  const D={jinsi:"Erkak",hudud:"Toshkent sh.",tolov:"Kontrakt",kontrakt_qarz:"Yo'q",stipendiya:"Yo'q",yashash:"Uyda",ishlaydi:"Yo'q",ota_ona:"O'rta",togarak:"Yo'q",olimpiada:"Yo'q",
+    yosh:19,ish_soati:0,yol_vaqti:30,kirish_bali:140,oldingi_ball:70,oldingi_qarzlar:0,nb_sababli:4,nb_sababsiz:10,topshiriq:70,lms_kirish:20,kutubxona:2,mustaqil_soat:7,...(t||{})};
+  app.innerHTML=`<div class="between"><div><h1>${sid?"Talabani tahrirlash":"Yangi talaba qo'shish"}</h1><p class="sub">Guruhni tanlang — o'quv rejadagi fanlar avtomatik chiqadi. O'ng tomonda model bashorati jonli yangilanadi. Yakuniy ballni kiritsangiz, model u bilan qayta o'qitiladi.</p></div>
+   <div class="row">${sid?"":'<button class="btn ghost" id="rnd">🎲 Tasodifiy to\'ldirish</button>'}</div></div>
+  <div class="grid" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)" id="fgrid"><form id="f" class="card" autocomplete="off">
+   <fieldset><legend>Tuzilma</legend><div class="fields">
+    <label>Fakultet<select id="sf">${META.tuzilma.map(f=>`<option value="${f.id}" ${g0&&g0.fak.id===f.id?"selected":""}>${esc(f.nomi)}</option>`).join("")}</select></label>
+    <label>Yo'nalish<select id="sy"></select></label><label>Guruh<select id="sg" name="guruh_id"></select></label></div></fieldset>
+   <fieldset><legend>Shaxsiy va ijtimoiy</legend><div class="fields"><label style="grid-column:1/-1">F.I.O.<input name="fio" required minlength="3" value="${esc(D.fio||"")}" placeholder="Familiya Ism"></label>
+    ${["jinsi","hudud","tolov","kontrakt_qarz","stipendiya","yashash","ishlaydi","ota_ona","togarak","olimpiada"].map(k=>sel(k,D[k])).join("")}
+    ${["yosh","ish_soati","yol_vaqti","kirish_bali"].map(k=>num(k,D[k])).join("")}</div></fieldset>
+   <fieldset><legend>Davomat va faollik</legend><div class="fields">${["oldingi_ball","oldingi_qarzlar","nb_sababli","nb_sababsiz","topshiriq","lms_kirish","kutubxona","mustaqil_soat"].map(k=>num(k,D[k])).join("")}</div></fieldset>
+   <fieldset><legend>Fanlar bo'yicha baholar (0–100)</legend><div class="subjrow small muted"><span class="fn">Fan</span><span>Joriy</span><span>Oraliq</span><span>Yakuniy</span><span>Bashorat</span></div><div id="subj"></div>
+    <p class="muted small">Yakuniy ixtiyoriy: bo'sh qoldirilsa, model uni bashorat qiladi.</p></fieldset>
+   <div class="row"><button class="btn" type="submit" id="save">${sid?"Saqlash":"Qo'shish"}</button><a class="btn ghost" href="${sid?"#/talaba/"+sid:"#/talabalar"}">Bekor qilish</a></div><div class="err" id="err"></div>
+  </form><div><div class="sticky" id="pv"><div class="card"><p class="muted">Ma'lumot kiriting…</p></div></div></div></div>`;
+  if(innerWidth<1000) $("#fgrid").style.gridTemplateColumns="1fr";
+  const gmap={}; grades.forEach(g=>gmap[g.fan_id]=g);
+  const fillY=()=>{const f=FAK($("#sf").value); $("#sy").innerHTML=f.yonalishlar.map(y=>`<option value="${y.id}" ${g0&&g0.yon.id===y.id?"selected":""}>${esc(y.kod)} — ${esc(y.nomi)}</option>`).join(""); fillG()};
+  const fillG=()=>{const y=YON($("#sy").value); $("#sg").innerHTML=(y?.guruhlar||[]).map(g=>`<option value="${g.id}" ${g0&&g0.id===g.id?"selected":""}>${esc(g.nomi)} (${g.kurs}-kurs)</option>`).join(""); loadSubj()};
+  const loadSubj=async()=>{const gid=$("#sg").value; if(!gid){$("#subj").innerHTML='<p class="muted">Bu yo\'nalishda guruh yo\'q. Boshqaruv bo\'limida qo\'shing.</p>';return}
+    const fs=await api(`/api/guruhlar/${gid}/fanlar`); const extra=grades.filter(g=>!fs.some(f=>f.id===g.fan_id)).map(g=>({id:g.fan_id,nomi:g.fan,tizim_id:g.tizim_id}));
+    $("#subj").innerHTML=[...fs,...extra].map(f=>{const g=gmap[f.id]||{}; return `<div class="subjrow" data-f="${f.id}"><span class="fn">${esc(f.nomi)}</span><input type="number" min="0" max="100" step="any" data-k="joriy" value="${g.joriy??""}" required><input type="number" min="0" max="100" step="any" data-k="oraliq" value="${g.oraliq??""}" required><input type="number" min="0" max="100" step="any" data-k="yakuniy" value="${g.yakuniy??""}" placeholder="—"><span class="small" id="sp${f.id}">—</span></div>`}).join("")||'<p class="muted">Bu guruh kursi uchun o\'quv rejada fan yo\'q. Boshqaruv → O\'quv reja bo\'limida fan biriktiring.</p>';
+    schedulePv()};
+  $("#sf").onchange=fillY; $("#sy").onchange=fillG; $("#sg").onchange=loadSubj; fillY();
+  const collect=()=>{const fd=new FormData($("#f")), o={}; fd.forEach((v,k)=>o[k]=v); META.num_cols.forEach(k=>o[k]=o[k]===""?null:+o[k]); o.guruh_id=+o.guruh_id;
+    o.baholar=[...document.querySelectorAll(".subjrow[data-f]")].map(r=>{const v=k=>r.querySelector(`[data-k=${k}]`).value; return {fan_id:+r.dataset.f,joriy:v("joriy")===""?null:+v("joriy"),oraliq:v("oraliq")===""?null:+v("oraliq"),yakuniy:v("yakuniy")===""?null:+v("yakuniy")}}); return o};
+  let tm; const schedulePv=()=>{clearTimeout(tm); tm=setTimeout(preview,350)};
+  async function preview(){const o=collect(); if(!o.guruh_id||o.baholar.some(b=>b.joriy==null||b.oraliq==null)||META.num_cols.some(k=>o[k]==null)){return}
+    if(!o.fio||o.fio.length<3) o.fio="Yangi talaba";
+    try{const r=await api("/api/preview",{method:"POST",body:o}); const p=r.prediction;
+      p.subjects.forEach(s=>{const e=$("#sp"+s.fan_id); if(e) e.innerHTML=`<b>${f1(s.pred)}</b> ${gradeChip(s.baho,s.fan_id&&META.fanlar.find(f=>f.id===s.fan_id)?.tizim_id)} <span class="muted">${pct(s.fail_p)}</span>`});
+      $("#pv").innerHTML=`<div class="card"><div class="muted small">Jonli bashorat</div><div class="big">${f1(p.ball)}</div><div class="row">${catPill(p.toifa)} <span class="pill" style="background:var(${p.otadi?"--good":"--bad"}-soft);color:var(${p.otadi?"--good":"--bad"})">${p.otadi?"O'tadi":"O'tmaydi"}</span> ${clPill(p.cluster_name)}</div>
+       <div style="margin-top:10px">${[["Qarz ehtimoli",p.fail_proba,"--bad"],["Chetlashtirish",p.chet_proba,"--bad"],["A'lo (grant)",p.alo_proba,"--good"],[META.grant_saqlash+" dan tushish",p.pasayish_proba,"--warn"]].map(([l,v,c])=>`<div class="pb"><span>${l}</span><div class="bar"><i style="width:${v*100}%;background:var(${c})"></i></div><b class="small">${pct(v)}</b></div>`).join("")}</div>
+       ${p.flags.map(f=>`<div class="flag">⚠ ${esc(f)}</div>`).join("")}<h3 style="margin-top:12px">Tavsiyalar</h3>${advBlock(r.advice)}
+       <h3 style="margin-top:12px">Eng kuchli omillar</h3>${r.explain.slice(0,6).map(e=>`<div class="kv"><span>${esc(e.label)}</span><b style="color:var(${e.impact>0?"--good":"--bad"})">${e.impact>0?"+":""}${e.impact.toFixed(1)}</b></div>`).join("")}
+       <h3 style="margin-top:12px">O'xshash talabalar</h3>${simBlock(r.similar.slice(0,4))}</div>`}catch(e){$("#pv").innerHTML=`<div class="card err">${esc(e.message)}</div>`}}
+  $("#f").oninput=schedulePv;
+  $("#f").onsubmit=async e=>{e.preventDefault(); $("#err").textContent=""; const o=collect(); $("#save").disabled=true;
+    try{const r=await api(sid?"/api/students/"+sid:"/api/students",{method:sid?"PUT":"POST",body:o}); toast(sid?"Saqlandi ✓":"Talaba qo'shildi ✓"); await loadMeta(); location.hash="#/talaba/"+r.id}
+    catch(er){$("#err").textContent=er.message; $("#save").disabled=false}};
+  if(!sid) $("#rnd").onclick=()=>{const R=(a,b)=>Math.round(a+Math.random()*(b-a)), P=a=>a[Math.floor(Math.random()*a.length)], f=$("#f");
+    const lvl=Math.random(); const set=(k,v)=>{const el=f.elements[k]; if(el) el.value=v};
+    set("fio",P(["Karimov","Aliyev","Saidov","Tursunov","Qodirov"])+" "+P(["Jasur","Sardor","Bekzod","Otabek","Temur"]));
+    ["jinsi","hudud","tolov","yashash","ota_ona","togarak","olimpiada","ishlaydi","kontrakt_qarz"].forEach(k=>set(k,P(META.options[k])));
+    set("yosh",R(18,23)); set("ish_soati",f.elements.ishlaydi.value==="Ha"?R(8,35):0); set("yol_vaqti",R(10,80)); set("kirish_bali",R(100,180));
+    set("oldingi_ball",R(45+lvl*30,65+lvl*30)); set("oldingi_qarzlar",R(0,3*(1-lvl))); set("nb_sababli",R(0,12)); set("nb_sababsiz",R(0,60*(1-lvl)));
+    set("topshiriq",R(30+lvl*40,60+lvl*40)); set("lms_kirish",R(3,50)); set("kutubxona",R(0,8)); set("mustaqil_soat",R(2,16));
+    document.querySelectorAll(".subjrow[data-f]").forEach(r=>{const b=R(40+lvl*35,60+lvl*38); r.querySelector("[data-k=joriy]").value=Math.min(100,b+R(-6,6)); r.querySelector("[data-k=oraliq]").value=Math.min(100,b+R(-8,6))});
+    schedulePv()};
+}
+
+/* ======================================================= 5. Analitika */
+async function pageAnalitika(p){
+  const d=await api("/api/analitika"+qs(unitParams(p))); const go=np=>location.hash="#/analitika"+qs(unitParams(np));
+  const LST={chetlash:["🚫 Chetlashtirish xavfi","3+ fandan qarz ehtimoli ≥ 50%",["fio","guruh","natija","chet","qarz","nb"]],
+    grant_dav:["🏅 Grantga da'vogarlar","Kontrakt talabalar, a'lo ehtimoli ≥ 50%",["fio","guruh","natija","alo","cluster"]],
+    grant_xavf:["📉 Grantni yo'qotish xavfi",`Grant talabalar, ${META.grant_saqlash} dan tushish ehtimoli ≥ 30%`,["fio","guruh","natija","pas","fail"]],
+    nb:["⏰ NB limitiga yetganlar","Sababsiz NB ≥ 36 soat",["fio","guruh","nb","natija","fail"]],anomal:["⚠️ G'ayrioddiy profillar","IsolationForest: ko'rsatkichlar kombinatsiyasi noodatiy",["fio","guruh","natija","ball","cluster"]]};
+  app.innerHTML=`<h1>Analitika</h1><p class="sub">${d.n} ta talaba bo'yicha: qaysi omil natijaga qanchalik ta'sir qiladi, qaysi fanlarda qarz kutilmoqda, kimga e'tibor kerak.</p>
+  <div class="filters">${unitSelects(p,"a")}</div>
+  <div class="grid g4">${Object.entries(LST).slice(0,4).map(([k,[t,s]])=>kpi(t,d.lists[k].n,s,k==="grant_dav"?"--good":"--bad")).join("")}</div>
+  <div class="grid g2">
+   <div class="card"><div class="between"><h2>Omil tahlili</h2><select id="fsel" style="width:auto">${d.factors.map((f,i)=>`<option value="${i}">${esc(f.label)} (farq ${f1(f.farq)})</option>`).join("")}</select></div>
+     <div class="chart"><canvas id="fa"></canvas></div><div id="fdesc" class="note" style="margin-top:8px"></div></div>
+   <div class="card"><h2>Omillar reytingi</h2><p class="muted small" style="margin-top:-8px">Guruhlar orasidagi o'rtacha ball farqi (eng yaxshi − eng yomon).</p>
+     <div class="chart"><canvas id="fr"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+   <div class="card"><h2>Fanlar bo'yicha kutilayotgan qarzlar</h2><p class="muted small" style="margin-top:-8px">Fan darajasidagi XGBoost modeli: har bir talaba × fan uchun qarz ehtimoli yig'indisi. Jami ≈ ${f1(d.qarz_kutilgan_jami)} ta qarz.</p>
+    <div class="tablewrap" style="max-height:380px"><table><thead><tr><th>Fan</th><th class="num">Talaba</th><th class="num">Bashorat ball</th><th class="num">Kutilgan qarz</th><th>Qarz %</th></tr></thead>
+    <tbody>${d.fan_risk.map(f=>`<tr><td class="wrap">${esc(f.fan)}</td><td class="num">${f.n}</td><td class="num">${f1(f.pred)}</td><td class="num"><b>${f1(f.qarz_kutilgan)}</b></td><td>${probBar(f.qarz_foiz/100)}</td></tr>`).join("")}</tbody></table></div></div>
+   <div class="card"><h2>Global ahamiyat (SHAP)</h2><p class="muted small" style="margin-top:-8px">Model qaroriga eng ko'p ta'sir qiladigan belgilar.</p><div class="chart" style="height:380px"><canvas id="gi"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px"><h2>Korrelyatsiya matritsasi</h2><div class="tablewrap"><table class="heat"><thead><tr><th></th>${d.corr.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead>
+   <tbody>${d.corr.values.map((r,i)=>`<tr><th style="text-align:left;min-width:150px">${esc(d.corr.cols[i])}</th>${r.map(v=>`<td style="background:${v>=0?`rgba(22,149,106,${Math.abs(v)*.7})`:`rgba(214,52,71,${Math.abs(v)*.7})`};color:${Math.abs(v)>.55?"#fff":"inherit"}">${v==null?"":v.toFixed(2)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>
+  <div class="card"><div class="tabs" id="ltabs">${Object.entries(LST).map(([k,[t]],i)=>`<button data-k="${k}" class="${i?"":"on"}">${t} (${d.lists[k].n})</button>`).join("")}</div><div id="lbody"></div></div>`;
+  bindUnitSelects("a",p,go);
+  const showList=k=>{const [t,s,cols]=LST[k]; $("#lbody").innerHTML=`<p class="muted small">${s}. Eng yuqori 30 tasi. <a href="#/talabalar${qs({...unitParams(p),maxsus:k})}">To'liq ro'yxat →</a></p><div class="tablewrap"><table>${thead(cols)}<tbody>${studentRows(d.lists[k].items,cols)}</tbody></table></div>`;
+    document.querySelectorAll("#ltabs button").forEach(b=>b.classList.toggle("on",b.dataset.k===k))};
+  document.querySelectorAll("#ltabs button").forEach(b=>b.onclick=()=>showList(b.dataset.k)); showList("chetlash");
+  let fc;
+  const showF=i=>{const f=d.factors[i]; fc&&fc.destroy();
+    fc=new Chart($("#fa"),{type:"bar",data:{labels:f.rows.map(r=>r.guruh),datasets:[{label:"O'rtacha ball",data:f.rows.map(r=>r.ortacha),backgroundColor:css("--accent")+"bb",borderRadius:4,yAxisID:"y"},
+      {type:"line",label:"Qarz %",data:f.rows.map(r=>r.otmaydi),borderColor:css("--bad"),backgroundColor:css("--bad"),yAxisID:"y1",tension:.3}]},
+      options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:css("--muted"),boxWidth:10}},tooltip:{callbacks:{afterBody:c=>"n = "+f.rows[c[0].dataIndex].n}}},scales:{...axes(),y1:{position:"right",grid:{display:false},ticks:{color:css("--muted")}}}}});
+    const b=f.rows.reduce((a,r)=>r.ortacha>a.ortacha?r:a,f.rows[0]||{}), w=f.rows.reduce((a,r)=>r.ortacha<a.ortacha?r:a,f.rows[0]||{});
+    $("#fdesc").innerHTML=f.rows.length>1?`<b>${esc(f.label)}</b>: eng yaxshi guruh — <b>${esc(b.guruh)}</b> (${f1(b.ortacha)} ball, qarz ${f1(b.otmaydi)}%), eng past — <b>${esc(w.guruh)}</b> (${f1(w.ortacha)} ball, qarz ${f1(w.otmaydi)}%).${f.korr!=null?` Korrelyatsiya r = ${f.korr}.`:""}`:"Yetarli ma'lumot yo'q";};
+  $("#fsel").onchange=e=>showF(+e.target.value); showF(0); charts.push({destroy:()=>fc&&fc.destroy()});
+  mk("fr",{type:"bar",data:{labels:d.factors.map(f=>f.label),datasets:[{data:d.factors.map(f=>f.farq),backgroundColor:css("--purple")+"bb",borderRadius:3}]},options:{indexAxis:"y",maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes()}});
+  mk("gi",{type:"bar",data:{labels:d.global_imp.map(g=>g.label),datasets:[{data:d.global_imp.map(g=>g.value),backgroundColor:css("--info")+"bb",borderRadius:3}]},options:{indexAxis:"y",maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes()}});
+}
+
+/* ======================================================= 6. Klasterlar */
+async function pageKlaster(){
+  const d=await api("/api/klasterlar");
+  app.innerHTML=`<h1>Klasterlash (K-Means, k = ${d.profiles.length})</h1><p class="sub">Talabalar baholar, NB, topshiriqlar, LMS faolligi, oldingi natija va mustaqil ta'lim bo'yicha o'xshash guruhlarga ajratilgan. Silhouette = ${d.silhouette}.</p>
+  <div class="grid g3">${d.profiles.map(p=>`<div class="card" style="border-left:4px solid var(${clVar(p.nomi)})"><div class="between"><h2 style="margin:0">${esc(p.nomi)}</h2><b>${p.n}</b></div><p class="muted small">${esc(CL_DESC[p.nomi]||"")}</p>
+    <div class="kv"><span>O'rtacha natija</span><b>${f1(p.ortacha)}</b><span>Oraliq o'rtacha</span><b>${f1(p.oraliq_ortacha)}</b><span>Sababsiz NB</span><b>${f1(p.nb_sababsiz)}</b><span>Topshiriqlar</span><b>${f1(p.topshiriq)}%</b><span>LMS</span><b>${f1(p.lms_kirish)}</b><span>Mustaqil ta'lim</span><b>${f1(p.mustaqil_soat)} soat</b>
+    <span>Qarz ehtimoli ≥50%</span><b>${f1(p.otmaydi)}%</b><span>Grant / ishlaydi / qarzdor</span><b>${f1(p.grant)}% / ${f1(p.ishlaydi)}% / ${f1(p.qarzdor)}%</b></div>
+    <a class="small" href="#/talabalar${qs({klaster:p.nomi})}">Talabalar →</a></div>`).join("")}</div>
+  <div class="grid g2"><div class="card"><h2>PCA xaritasi</h2><div class="chart tall"><canvas id="k1"></canvas></div></div>
+   <div class="card"><h2>Klaster profillari (normallashgan)</h2><div class="chart tall"><canvas id="k2"></canvas></div></div></div>
+  <div class="card"><h2>Klasterlar sonini tanlash: Silhouette tahlili</h2><div class="chart"><canvas id="k3"></canvas></div></div>`;
+  scatterChart("k1",d.scatter);
+  const feats=d.features, mx=feats.map(f=>Math.max(...d.profiles.map(p=>p[f.key]))), mn=feats.map(f=>Math.min(...d.profiles.map(p=>p[f.key])));
+  mk("k2",{type:"radar",data:{labels:feats.map(f=>f.label),datasets:d.profiles.map(p=>({label:p.nomi,data:feats.map((f,i)=>mx[i]===mn[i]?.5:(p[f.key]-mn[i])/(mx[i]-mn[i])),borderColor:css(clVar(p.nomi)),backgroundColor:css(clVar(p.nomi))+"22",pointRadius:2}))},
+    options:{maintainAspectRatio:false,scales:{r:{grid:{color:css("--border")},angleLines:{color:css("--border")},pointLabels:{color:css("--muted"),font:{size:11}},ticks:{display:false}}},plugins:{legend:{position:"bottom",labels:{color:css("--muted"),boxWidth:10}}}}});
+  mk("k3",{type:"line",data:{labels:d.k_scan.map(k=>"k="+k.k),datasets:[{data:d.k_scan.map(k=>k.silhouette),borderColor:css("--accent"),pointBackgroundColor:d.k_scan.map(k=>k.k===d.profiles.length?css("--bad"):css("--accent")),pointRadius:5,tension:.2}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes()}});
+}
+
+/* ======================================================= 7. Modellar */
+function metricTable(rows,keys,best){
+  return `<div class="tablewrap"><table><thead><tr><th>Model</th>${keys.map(k=>`<th class="num">${k}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr class="${r.baseline?"base":""} ${r.model===best?"best":""}"><td>${r.model===best?"🏆 ":""}${esc(r.model)}</td>${keys.map(k=>`<td class="num">${r[k]??"—"}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+async function pageModels(){
+  const m=await api("/api/models"), st=await api("/api/status");
+  const reg=m.reg, base=reg.rows.find(r=>r.baseline&&r.model.includes("oraliq")), bestR=reg.rows.find(r=>r.model===reg.best);
+  app.innerHTML=`<div class="between"><div><h1>Modellar va aniqlik</h1><p class="sub">${m.n_labeled} ta talaba (yakuniysi ma'lum) va ${m.n_subject_rows} ta talaba × fan yozuvida 5-fold kross-validatsiya. Baholash tizimi: ${esc(m.tizim)}. O'qitilgan: ${esc(m.trained_at)} (${m.train_seconds} s)${m.refit_at?`, oxirgi qayta o'qitish: ${esc(m.refit_at)}`:""}.</p></div>
+   <button class="btn" id="rt" ${st.busy?"disabled":""}>${st.busy?"⏳ O'qitilmoqda…":"🔄 To'liq qayta o'qitish"}</button></div>
+  <div class="grid g4">${kpi("Regressiya MAE",bestR.MAE+" ball",`${esc(reg.best)} · R² = ${bestR.R2}`,"--good")}${kpi("Bazaviyga nisbatan",base?Math.round((1-bestR.MAE/base.MAE)*100)+"% aniqroq":"—",base?`faqat oraliq: MAE ${base.MAE}`:"")}
+   ${kpi("Toifa F1 (macro)",m.toifa.rows.find(r=>r.model===m.toifa.best)["F1 (macro)"],esc(m.toifa.best))}${kpi("Qarz ROC-AUC",m.otmaydi.rows.find(r=>r.model===m.otmaydi.best)["ROC-AUC"],esc(m.otmaydi.best))}</div>
+  <div class="grid g2"><div class="card"><h2>1. Regressiya: yakuniy o'rtacha ball</h2>${metricTable(reg.rows,["MAE","RMSE","R2"],reg.best)}<p class="muted small">Kursiv — bazaviy (solishtirish uchun) modellar. σ (qoldiq) = ${reg.sigma}: ehtimollar shu asosida hisoblanadi.</p></div>
+   <div class="card"><h2>Haqiqiy va bashorat (OOF)</h2><div class="chart"><canvas id="m1"></canvas></div></div></div>
+  <div class="grid g3">${[["toifa","2. Klassifikatsiya: toifalar",["Accuracy","F1 (macro)"]],["otmaydi","3. O'tadi / o'tmaydi",["Accuracy","Recall","ROC-AUC"]],["chetlash","4. Chetlashtirish xavfi (3+ qarz)",["Accuracy","Recall","ROC-AUC"]]].map(([k,t,keys])=>
+   `<div class="card"><h2>${t}</h2>${metricTable(m[k].rows,keys,m[k].best)}${m[k].rate!=null?`<p class="muted small">Ijobiy sinf ulushi: ${pct(m[k].rate)}</p>`:`<p class="muted small">Taqsimot: ${Object.entries(m[k].distribution||{}).map(([a,b])=>esc(a)+" "+b).join(" · ")}</p>`}</div>`).join("")}</div>
+  <div class="grid g2"><div class="card"><h2>5. Fan darajasidagi model (talaba × fan)</h2>${metricTable(m.fan.rows,["MAE","RMSE","R2"],"XGBoost (fan darajasi)")}<p class="muted small">Har fan bo'yicha qarz ehtimoli: Φ((o'tish chegarasi − bashorat)/σ), σ = ${m.fan.sigma}. Qarz ROC-AUC = <b>${m.fan.auc_qarz}</b>. Yangi fan qo'shilsa ham ishlaydi.</p>
+    <div class="tablewrap" style="max-height:300px"><table><thead><tr><th>Fan</th><th class="num">n</th><th class="num">MAE</th><th class="num">Qarz (haqiqiy)</th><th class="num">Qarz (bashorat)</th></tr></thead><tbody>${m.fan.per_fan.map(f=>`<tr><td class="wrap">${esc(f.fan)}</td><td class="num">${f.n}</td><td class="num">${f.MAE}</td><td class="num">${pct(f.qarz_haqiqiy)}</td><td class="num">${pct(f.qarz_bashorat)}</td></tr>`).join("")}</tbody></table></div></div>
+   <div class="card"><h2>6. Aniqlikni oshirish ishlari</h2>
+    <h3>a) Giperparametrlarni sozlash (RandomizedSearchCV, ${m.tuning.iterations} kombinatsiya)</h3><div class="kv"><span>Standart XGBoost MAE</span><b>${m.tuning.mae_default}</b><span>Sozlangan XGBoost MAE</span><b style="color:var(--good)">${m.tuning.mae_tuned}</b></div>
+    <p class="small muted">${Object.entries(m.tuning.params).map(([k,v])=>k+" = "+v).join(" · ")}</p>
+    <h3>b) Belgilar guruhlari ta'siri (ablation)</h3><div class="chart" style="height:200px"><canvas id="m2"></canvas></div>
+    <h3 style="margin-top:12px">c) Ma'lumot hajmi ta'siri (learning curve)</h3><div class="chart" style="height:200px"><canvas id="m3"></canvas></div>
+    <p class="note">Ko'proq talaba = aniqroq model: ${m.learning_curve[1]?.n||""} ta talabada MAE ${m.learning_curve[1]?.MAE}, ${m.learning_curve.at(-1).n} tada — ${m.learning_curve.at(-1).MAE}.</p></div></div>
+  <div class="card"><h2>Global belgilar ahamiyati (SHAP)</h2><div class="chart" style="height:420px"><canvas id="m4"></canvas></div></div>`;
+  $("#rt").onclick=async()=>{if(!confirm("To'liq qayta o'qitish ~1 daqiqa davom etadi (tuning + barcha modellar CV). Boshlansinmi?"))return; await api("/api/retrain",{method:"POST"}); toast("O'qitish boshlandi"); $("#rt").disabled=true; $("#rt").textContent="⏳ O'qitilmoqda…"; wasBusy=true};
+  mk("m1",{type:"scatter",data:{datasets:[{data:reg.scatter.map(([a,b])=>({x:a,y:b})),backgroundColor:css("--accent")+"66",pointRadius:2.5},{type:"line",data:[{x:0,y:0},{x:100,y:100}],borderColor:css("--muted"),borderDash:[4,4],pointRadius:0}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes({x:{min:20,max:100,title:{display:true,text:"Haqiqiy",color:css("--muted")},grid:{color:css("--border")},ticks:{color:css("--muted")}},y:{min:20,max:100,title:{display:true,text:"Bashorat",color:css("--muted")},grid:{color:css("--border")},ticks:{color:css("--muted")}}})}});
+  mk("m2",{type:"bar",data:{labels:m.ablation.map(a=>a.belgilar),datasets:[{label:"MAE",data:m.ablation.map(a=>a.MAE),backgroundColor:css("--purple")+"bb",borderRadius:3}]},options:{indexAxis:"y",maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes()}});
+  mk("m3",{type:"line",data:{labels:m.learning_curve.map(l=>l.n),datasets:[{label:"MAE",data:m.learning_curve.map(l=>l.MAE),borderColor:css("--accent"),tension:.3},{label:"Qarz AUC",data:m.learning_curve.map(l=>l.AUC),borderColor:css("--good"),yAxisID:"y1",tension:.3}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:css("--muted"),boxWidth:10}}},scales:{...axes(),y1:{position:"right",grid:{display:false},ticks:{color:css("--muted")}}}}});
+  mk("m4",{type:"bar",data:{labels:m.global_imp.map(g=>g.label),datasets:[{data:m.global_imp.map(g=>g.value),backgroundColor:css("--info")+"bb",borderRadius:3}]},options:{indexAxis:"y",maintainAspectRatio:false,plugins:{legend:{display:false}},scales:axes()}});
+}
+
+/* ======================================================= 8. Boshqaruv */
+function modal(html){$("#modalBody").innerHTML=html; $("#modal").style.display="grid";}
+function closeModal(){$("#modal").style.display="none"}
+$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+function formModal(title,fields,vals,onSave){
+  modal(`<h2>${esc(title)}</h2><form id="mf">${fields.map(f=>`<label>${esc(f.label)}${f.type==="select"?`<select name="${f.k}">${f.options.map(([v,t])=>`<option value="${v}" ${v==vals[f.k]?"selected":""}>${esc(t)}</option>`).join("")}</select>`
+    :`<input name="${f.k}" type="${f.type||"text"}" value="${esc(vals[f.k]??"")}" ${f.min!=null?`min="${f.min}"`:""} ${f.max!=null?`max="${f.max}"`:""} required>`}</label>`).join("")}
+    <div class="row"><button class="btn" type="submit">Saqlash</button><button class="btn ghost" type="button" onclick="closeModal()">Bekor</button></div><div class="err" id="merr"></div></form>`);
+  $("#mf").onsubmit=async e=>{e.preventDefault(); const o={}; new FormData($("#mf")).forEach((v,k)=>{const f=fields.find(x=>x.k===k); o[k]=f.type==="number"||f.num?+v:v});
+    try{await onSave(o); closeModal()}catch(er){$("#merr").textContent=er.message}};
+}
+async function refreshAdmin(msg){await loadMeta(); if(msg) toast(msg); pageAdmin(parseHash()[1],true)}
+async function delItem(url,name){if(!confirm(`"${name}" o'chirilsinmi?`))return; try{await api(url,{method:"DELETE"}); refreshAdmin("O'chirildi")}catch(e){toast(e.message)}}
+
+let ADMIN_TAB="tuzilma";
+async function pageAdmin(p,keep){
+  if(!keep) await loadMeta();
+  const T={tuzilma:"🏛 Fakultet · yo'nalish · guruh",fanlar:"📚 Fanlar",reja:"🗓 O'quv reja",tizim:"📏 Baholash tizimlari"};
+  app.innerHTML=`<h1>Boshqaruv</h1><p class="sub">Fakultetlar, yo'nalishlar, guruhlar (kurslar), fanlar, o'quv reja va baholash tizimlarini qo'shing va tahrirlang. Baholash tizimi o'zgarsa model avtomatik qayta o'qitiladi.</p>
+  <div class="tabs">${Object.entries(T).map(([k,t])=>`<button data-t="${k}" class="${k===ADMIN_TAB?"on":""}">${t}</button>`).join("")}</div><div id="ab"></div>`;
+  document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{ADMIN_TAB=b.dataset.t; pageAdmin(p,true)});
+  ({tuzilma:adminTuzilma,fanlar:adminFanlar,reja:adminReja,tizim:adminTizim})[ADMIN_TAB]();
+}
+const fakOpts=()=>META.tuzilma.map(f=>[f.id,f.nomi]);
+const yonOpts=()=>META.tuzilma.flatMap(f=>f.yonalishlar.map(y=>[y.id,`${y.kod} — ${y.nomi}`]));
+const tizOpts=()=>META.tizimlar.map(t=>[t.id,t.nomi]);
+const FK=[{k:"nomi",label:"Fakultet nomi"}], YK=()=>[{k:"fakultet_id",label:"Fakultet",type:"select",options:fakOpts(),num:1},{k:"kod",label:"Qisqa kod (masalan, KI)"},{k:"nomi",label:"Yo'nalish nomi"}];
+const GK=()=>[{k:"yonalish_id",label:"Yo'nalish",type:"select",options:yonOpts(),num:1},{k:"nomi",label:"Guruh nomi (masalan, KI26-3)"},{k:"kurs",label:"Kurs (bosqich)",type:"select",options:[1,2,3,4,5,6].map(k=>[k,k+"-kurs"]),num:1}];
+const FNK=()=>[{k:"nomi",label:"Fan nomi"},{k:"kredit",label:"Kredit",type:"number",min:1,max:30},{k:"tizim_id",label:"Baholash tizimi",type:"select",options:tizOpts(),num:1}];
+const save=(table,id)=>async o=>{await api(`/api/admin/${table}${id?"/"+id:""}`,{method:id?"PUT":"POST",body:o}); refreshAdmin(id?"Saqlandi ✓":"Qo'shildi ✓")};
+
+function adminTuzilma(){
+  const ab=$("#ab");
+  ab.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" id="af">+ Fakultet</button><button class="btn ghost" id="ay">+ Yo'nalish</button><button class="btn ghost" id="ag">+ Guruh</button></div>
+  ${META.tuzilma.map(f=>`<div class="card" style="margin-bottom:14px"><div class="between"><h2 style="margin:0">${esc(f.nomi)}</h2><div class="row"><button class="btn ghost sm" data-ef="${f.id}">✏️</button><button class="btn danger sm" data-df="${f.id}">🗑</button></div></div>
+   ${f.yonalishlar.map(y=>`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)"><div class="between"><div><b>${esc(y.kod)} — ${esc(y.nomi)}</b> <span class="muted small">${y.talabalar} talaba · ${y.guruhlar.length} guruh</span></div>
+     <div class="row"><button class="btn ghost sm" data-ng="${y.id}">+ guruh</button><button class="btn ghost sm" data-ey="${y.id}">✏️</button><button class="btn danger sm" data-dy="${y.id}">🗑</button></div></div>
+     <div class="chips" style="margin-top:8px">${y.guruhlar.map(g=>`<span class="chip"><a href="#/tuzilma${qs({fakultet_id:f.id,yonalish_id:y.id,guruh_id:g.id})}">${esc(g.nomi)}</a> <span class="muted">${g.kurs}-k · ${g.talabalar}</span>
+       <button title="Tahrirlash" style="color:var(--muted)" data-eg="${g.id}">✏️</button><button title="O'chirish" data-dg="${g.id}">×</button></span>`).join("")||'<span class="muted small">Guruh yo\'q</span>'}</div></div>`).join("")||'<p class="muted small">Yo\'nalish yo\'q</p>'}</div>`).join("")}
+  <p class="note">Talabasi bor guruhni, guruhi bor yo'nalishni yoki yo'nalishi bor fakultetni o'chirib bo'lmaydi — avval ichidagilarni o'chiring yoki ko'chiring.</p>`;
+  $("#af").onclick=()=>formModal("Yangi fakultet",FK,{},save("fakultetlar"));
+  $("#ay").onclick=()=>formModal("Yangi yo'nalish",YK(),{},save("yonalishlar"));
+  $("#ag").onclick=()=>formModal("Yangi guruh",GK(),{kurs:1},save("guruhlar"));
+  ab.querySelectorAll("[data-ef]").forEach(b=>b.onclick=()=>{const f=FAK(b.dataset.ef); formModal("Fakultetni tahrirlash",FK,f,save("fakultetlar",f.id))});
+  ab.querySelectorAll("[data-df]").forEach(b=>b.onclick=()=>delItem("/api/admin/fakultetlar/"+b.dataset.df,FAK(b.dataset.df).nomi));
+  ab.querySelectorAll("[data-ey]").forEach(b=>b.onclick=()=>{const y=YON(b.dataset.ey); formModal("Yo'nalishni tahrirlash",YK(),y,save("yonalishlar",y.id))});
+  ab.querySelectorAll("[data-dy]").forEach(b=>b.onclick=()=>delItem("/api/admin/yonalishlar/"+b.dataset.dy,YON(b.dataset.dy).nomi));
+  ab.querySelectorAll("[data-ng]").forEach(b=>b.onclick=()=>formModal("Yangi guruh",GK(),{yonalish_id:+b.dataset.ng,kurs:1},save("guruhlar")));
+  ab.querySelectorAll("[data-eg]").forEach(b=>b.onclick=()=>{const g=GUR(b.dataset.eg); formModal("Guruhni tahrirlash",GK(),g,save("guruhlar",g.id))});
+  ab.querySelectorAll("[data-dg]").forEach(b=>b.onclick=()=>delItem("/api/admin/guruhlar/"+b.dataset.dg,GUR(b.dataset.dg).nomi));
+}
+function adminFanlar(){
+  const ab=$("#ab");
+  ab.innerHTML=`<div class="between" style="margin-bottom:12px"><input id="fq" placeholder="Fan qidirish…" style="max-width:260px"><button class="btn" id="nf">+ Yangi fan</button></div>
+  <div class="card"><div class="tablewrap"><table><thead><tr><th>Fan</th><th class="num">Kredit</th><th>Baholash tizimi</th><th class="num">Rejada</th><th class="num">Baholar</th><th></th></tr></thead><tbody id="ftb"></tbody></table></div></div>
+  <p class="note">Fanning baholash tizimi yoki krediti o'zgarsa, model qayta o'qitiladi. Bahosi bor fanni o'chirib bo'lmaydi.</p>`;
+  const draw=q=>$("#ftb").innerHTML=META.fanlar.filter(f=>!q||f.nomi.toLowerCase().includes(q.toLowerCase())).map(f=>`<tr><td><b>${esc(f.nomi)}</b></td><td class="num">${f.kredit}</td><td>${esc(f.tizim)}</td><td class="num">${f.rejada}</td><td class="num">${f.baholar_soni}</td>
+    <td class="num"><button class="btn ghost sm" data-e="${f.id}">✏️</button> <button class="btn danger sm" data-d="${f.id}">🗑</button></td></tr>`).join("");
+  draw(""); $("#fq").oninput=e=>{draw(e.target.value); bind()};
+  const bind=()=>{ab.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{const f=META.fanlar.find(x=>x.id==b.dataset.e); formModal("Fanni tahrirlash",FNK(),f,save("fanlar",f.id))});
+    ab.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>delItem("/api/admin/fanlar/"+b.dataset.d,META.fanlar.find(x=>x.id==b.dataset.d).nomi))}; bind();
+  $("#nf").onclick=()=>formModal("Yangi fan",FNK(),{kredit:6,tizim_id:META.faol_tizim},save("fanlar"));
+}
+let REJA_Y=null;
+function adminReja(){
+  const ab=$("#ab"), ys=META.tuzilma.flatMap(f=>f.yonalishlar); if(!ys.length){ab.innerHTML='<p class="muted">Avval yo\'nalish qo\'shing.</p>';return}
+  if(!ys.some(y=>y.id==REJA_Y)) REJA_Y=ys[0].id; const y=YON(REJA_Y);
+  ab.innerHTML=`<div class="filters"><select id="ry">${ys.map(x=>`<option value="${x.id}" ${x.id==REJA_Y?"selected":""}>${esc(x.kod)} — ${esc(x.nomi)}</option>`).join("")}</select></div>
+  <div class="grid g3">${[1,2,3,4,5,6].map(k=>{const list=y.reja[k]||[]; const free=META.fanlar.filter(f=>!list.some(l=>l.id===f.id)); const ng=y.guruhlar.filter(g=>g.kurs===k).length;
+   return `<div class="card"><div class="between"><h2 style="margin:0">${k}-kurs</h2><span class="muted small">${list.length} fan · ${ng} guruh</span></div>
+    <div class="chips" style="margin:10px 0">${list.map(f=>`<span class="chip">${esc(f.nomi)}<button title="Rejadan olib tashlash" data-rm="${k}:${f.id}">×</button></span>`).join("")||'<span class="muted small">Fan biriktirilmagan</span>'}</div>
+    <div class="row" style="flex-wrap:nowrap"><select data-sel="${k}"><option value="">Fan qo'shish…</option>${free.map(f=>`<option value="${f.id}">${esc(f.nomi)}</option>`).join("")}</select><button class="btn sm" data-add="${k}">+</button></div></div>`}).join("")}</div>
+  <p class="note">O'quv reja talaba qo'shish formasida qaysi fanlar chiqishini belgilaydi. Fan darajasidagi model har qanday fanlar to'plami bilan ishlaydi.</p>`;
+  $("#ry").onchange=e=>{REJA_Y=+e.target.value; adminReja()};
+  ab.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{const [k,f]=b.dataset.rm.split(":"); await api(`/api/admin/reja?yonalish_id=${REJA_Y}&kurs=${k}&fan_id=${f}`,{method:"DELETE"}); refreshAdmin("Rejadan olib tashlandi")});
+  ab.querySelectorAll("[data-add]").forEach(b=>b.onclick=async()=>{const k=b.dataset.add, f=ab.querySelector(`[data-sel="${k}"]`).value; if(!f)return; await api("/api/admin/reja",{method:"POST",body:{yonalish_id:REJA_Y,kurs:+k,fan_id:+f}}); refreshAdmin("Rejaga qo'shildi")});
+}
+function adminTizim(){
+  const ab=$("#ab");
+  ab.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" id="nt">+ Yangi baholash tizimi</button></div>
+  <div class="grid g3">${META.tizimlar.map(t=>{const act=t.id===META.faol_tizim, used=META.fanlar.filter(f=>f.tizim_id===t.id).length; const n=t.chegaralar.length;
+   return `<div class="card" style="${act?"border-color:var(--accent);border-width:2px":""}"><div class="between"><h2 style="margin:0">${esc(t.nomi)}</h2>${act?'<span class="pill" style="background:var(--accent-soft);color:var(--accent)">Faol</span>':""}</div>
+    <p class="muted small">${esc(t.tavsif||"")} · ${used} fanda ishlatiladi</p>
+    <table><thead><tr><th class="num">Min ball</th><th>Baho</th><th>Nomi</th><th>O'tadi</th></tr></thead><tbody>${t.chegaralar.map((c,i)=>`<tr><td class="num">${c.min}</td><td><span class="gchip" style="background:var(${ladder(n)[n-1-i]}-soft);color:var(${ladder(n)[n-1-i]})">${esc(c.baho)}</span></td><td>${esc(c.nomi)}</td><td>${c.otish?"✓":"✗"}</td></tr>`).join("")}</tbody></table>
+    <div class="row" style="margin-top:10px">${act?"":`<button class="btn sm" data-act="${t.id}">Faol qilish</button>`}<button class="btn ghost sm" data-e="${t.id}">✏️ Tahrirlash</button>${act?"":`<button class="btn danger sm" data-d="${t.id}">🗑</button>`}</div></div>`}).join("")}</div>
+  <p class="note">Faol tizim talabalarning umumiy toifasini (klassifikatsiya sinflari) belgilaydi. Har bir fan o'z tizimi bo'yicha baholanadi va o'tish chegarasi shundan olinadi. Barcha ballar ichki 0–100 shkalada saqlanadi.</p>`;
+  $("#nt").onclick=()=>tizimEditor(null);
+  ab.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>tizimEditor(META.tizimlar.find(t=>t.id==b.dataset.e)));
+  ab.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>delItem("/api/admin/tizimlar/"+b.dataset.d,META.tizimlar.find(t=>t.id==b.dataset.d).nomi));
+  ab.querySelectorAll("[data-act]").forEach(b=>b.onclick=async()=>{if(!confirm("Faol tizim o'zgarsa, toifalar o'zgaradi va model to'liq qayta o'qitiladi (~1 daqiqa). Davom etilsinmi?"))return;
+    await api("/api/admin/faol_tizim/"+b.dataset.act,{method:"PUT"}); wasBusy=true; refreshAdmin("Faol tizim o'zgardi, model qayta o'qitilmoqda…")});
+}
+function tizimEditor(t){
+  let rows=t?t.chegaralar.map(c=>({...c})):[{min:85,baho:"A",nomi:"A'lo",otish:true},{min:70,baho:"B",nomi:"Yaxshi",otish:true},{min:55,baho:"C",nomi:"Qoniqarli",otish:true},{min:0,baho:"F",nomi:"Qoniqarsiz",otish:false}];
+  const draw=()=>{$("#tzr").innerHTML=rows.map((r,i)=>`<div class="tz"><input type="number" min="0" max="100" value="${r.min}" data-i="${i}" data-k="min" title="Min ball"><input value="${esc(r.baho)}" data-i="${i}" data-k="baho" title="Baho belgisi"><input value="${esc(r.nomi)}" data-i="${i}" data-k="nomi" title="Nomi">
+    <label style="margin:0;display:flex;gap:4px;align-items:center"><input type="checkbox" style="width:auto" ${r.otish?"checked":""} data-i="${i}" data-k="otish">o'tadi</label><button type="button" class="btn danger sm" data-x="${i}">×</button></div>`).join("");
+    $("#tzr").querySelectorAll("input").forEach(inp=>inp.oninput=inp.onchange=()=>{const r=rows[inp.dataset.i]; r[inp.dataset.k]=inp.type==="checkbox"?inp.checked:inp.type==="number"?+inp.value:inp.value});
+    $("#tzr").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.x,1); draw()})};
+  modal(`<h2>${t?"Baholash tizimini tahrirlash":"Yangi baholash tizimi"}</h2><label>Nomi<input id="tn" value="${esc(t?.nomi||"")}"></label><label>Tavsif<input id="td" value="${esc(t?.tavsif||"")}"></label>
+   <div class="tz small muted"><span>Min ball</span><span>Baho</span><span>Nomi</span><span></span><span></span></div><div id="tzr"></div>
+   <button type="button" class="btn ghost sm" id="tadd">+ daraja</button><p class="muted small">Ball shu chegaradan yuqori bo'lsa, shu baho qo'yiladi. Eng past daraja 0 dan boshlanadi.</p>
+   <div class="row"><button class="btn" id="tsave">Saqlash</button><button class="btn ghost" onclick="closeModal()">Bekor</button></div><div class="err" id="merr"></div>`);
+  draw(); $("#tadd").onclick=()=>{rows.push({min:50,baho:"",nomi:"",otish:true}); draw()};
+  $("#tsave").onclick=async()=>{try{const r=await api("/api/admin/tizimlar"+(t?"/"+t.id:""),{method:t?"PUT":"POST",body:{nomi:$("#tn").value,tavsif:$("#td").value,chegaralar:rows}});
+    closeModal(); if(r.retrain) wasBusy=true; refreshAdmin(r.retrain?"Saqlandi, model qayta o'qitilmoqda…":"Saqlandi ✓")}catch(e){$("#merr").textContent=e.message}};
+}
+
+/* ======================================================= ishga tushirish */
+$("#themeBtn").onclick=()=>{const r=document.documentElement, dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  r.dataset.theme=dark?"light":"dark"; try{localStorage.setItem("theme",r.dataset.theme)}catch(e){} route()};
+try{const t=localStorage.getItem("theme"); if(t) document.documentElement.dataset.theme=t}catch(e){}
+window.addEventListener("hashchange",route);
+(async function boot(){
+  for(;;){try{await loadMeta(); STATUS=META.status; if(META.status.ready) break}catch(e){}
+    app.innerHTML=`<div class="loading">⏳ Model birinchi marta o'qitilmoqda (1500+ talaba, ~1 daqiqa)…<br><span class="small">${esc(META?.status?.message||"")}</span></div>`; await new Promise(r=>setTimeout(r,2500))}
+  if(typeof Chart!=="undefined"){Chart.defaults.font.family=getComputedStyle(document.body).fontFamily; Chart.defaults.color=css("--muted")}
+  if(DEMO){const b=$("#banner"); b.style.display="block"; b.style.background="var(--info-soft)"; b.style.color="var(--info)"; b.innerHTML=`Statik demo — faqat ko'rish (oldindan hisoblangan bashoratlar). To'liq tizim (qo'shish, tahrirlash, qayta o'qitish): <a href="${REPO_URL}#readme">GitHub yo'riqnomasi</a>`; route(); return}
+  route(); pollStatus();
+})();
+</script>
+</body>
+</html>
